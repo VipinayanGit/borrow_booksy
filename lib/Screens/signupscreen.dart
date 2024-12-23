@@ -15,11 +15,17 @@ class _signupscreenState extends State<signupscreen> {
         title:Text("Signup page"),
         centerTitle: true,
       ),
+      
       body: SafeArea(
         child:Center(
           child: Column(
             children: [
-              Text("hi"),
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: Image.asset("assets/logo.png",
+                height: 150,
+                width: 150,),
+              ),
             ],
           ),
         ) ),
