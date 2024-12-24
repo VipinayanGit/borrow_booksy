@@ -8,6 +8,11 @@ class signupscreen extends StatefulWidget {
 }
 
 class _signupscreenState extends State<signupscreen> {
+
+  bool _obscureText = true; //Set to true because by default the text should be hidden
+
+
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,44 +34,61 @@ class _signupscreenState extends State<signupscreen> {
                 ),
               ),
               SizedBox(height: 40),
+
               Container(
+                
                 padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
                 child: TextField(
+                 
                   decoration: InputDecoration(
                       // fillColor: Colors.white,
                       filled: true,
                       labelText: "Username",
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.all(10)),
-                      
                 ),
               ),
               SizedBox(height: 20),
               Container(
-                 padding: EdgeInsets.all(10),
+                padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
                 child: TextField(
-                  decoration: InputDecoration(
-                    //fillColor: Colors.white,
-                    filled: true,
-                    labelText: "password",
-                    border: InputBorder.none
-                  ),
-                ),
-              ),
-              SizedBox(height: 20),
-              Container(
-                 padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
-                child: TextField(
+                   obscureText: _obscureText,
                   
                   decoration: InputDecoration(
-                    //fillColor: Colors.white,
-                    filled: true,
-                    labelText: "ID",
-                    border: InputBorder.none
-                  ),
+                    
+                      
+
+                      //fillColor: Colors.white,
+                      filled: true,
+                      labelText: "password",
+                      border: InputBorder.none,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureText?Icons.visibility_off:Icons.visibility
+                          
+                          ),
+                          onPressed: (){
+                            setState(() {
+                              _obscureText=!_obscureText;
+                            });
+                          },
+                        
+                        )),
+                  
+                ),
+              ),
+              SizedBox(height: 20),
+              Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
+                child: TextField(
+                  decoration: InputDecoration(
+                      //fillColor: Colors.white,
+                      filled: true,
+                      labelText: "ID",
+                      border: InputBorder.none),
                 ),
               ),
             ],
