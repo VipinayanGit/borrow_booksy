@@ -59,7 +59,7 @@ class _NavscreenState extends State<Navscreen> {
         ?[
           BottomNavigationBarItem(
                   icon: Icon(Icons.dashboard),
-                  label: "Admin",
+                  label: "admin",
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.bar_chart),
