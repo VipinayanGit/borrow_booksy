@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class Profilescreen extends StatefulWidget {
   const Profilescreen({super.key});
@@ -8,6 +9,8 @@ class Profilescreen extends StatefulWidget {
 }
 
 class _ProfilescreenState extends State<Profilescreen> {
+  ImagePicker _picker = ImagePicker();
+
   void ontapped() {
     setState(() {
       return print("hello");
@@ -23,7 +26,6 @@ class _ProfilescreenState extends State<Profilescreen> {
           title: Text("profilescreen"),
         ),
         body: SafeArea(
-            
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Column(
@@ -46,20 +48,19 @@ class _ProfilescreenState extends State<Profilescreen> {
                             Text("flat no"),
                             SizedBox(height: 10),
                             Row(
-                             children: [
-                               
+                              children: [
                                 SizedBox(width: 5),
-                                    Container(
-                                      height: 30,
-                                      width: 150,
-                                      child: ElevatedButton(
-                                      onPressed: (){}, 
-                                      child:Text("Add or remove books",
-                                       style: TextStyle(
-                                      fontSize: 10
-                                    ),),
-                                     ),
-                                   ),
+                                Container(
+                                  height: 30,
+                                  width: 150,
+                                  child: ElevatedButton(
+                                    onPressed: () {},
+                                    child: Text(
+                                      "Add or remove books",
+                                      style: TextStyle(fontSize: 10),
+                                    ),
+                                  ),
+                                ),
                               ],
                             )
                           ],
@@ -82,11 +83,11 @@ class _ProfilescreenState extends State<Profilescreen> {
                 Expanded(
                   child: TabBarView(
                     children: [
-                      
                       // "Your Rack" tab: Grid of books
                       GridView.builder(
                         padding: const EdgeInsets.all(8.0),
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          childAspectRatio: 3 / 4,
                           crossAxisCount: 2, // Number of columns
                           crossAxisSpacing: 10, // Spacing between columns
                           mainAxisSpacing: 10, // Spacing between rows
@@ -96,21 +97,25 @@ class _ProfilescreenState extends State<Profilescreen> {
                           return GestureDetector(
                             onTap: ontapped,
                             child: Container(
-                              
-                              decoration: BoxDecoration(
-                                
-                                borderRadius: BorderRadius.circular(5),
-                                border: Border.all(
-                                  color: Colors.white
-                                )
-                              ),
-                              
+                              decoration: BoxDecoration(borderRadius: BorderRadius.circular(5), border: Border.all(color: Colors.white)),
                               child: Center(
-                                child: Text(
-                                  'Book ${index + 1}',
-                                  style: const TextStyle(fontSize: 16),
-                                ),
-                              ),
+                                  child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    //padding: EdgeInsets.all(10),
+                                    height: 100,
+                                    width: 90,
+                                    color: Colors.red,
+                                  ),
+                                  SizedBox(height: 10),
+                                  Text(
+                                    "Book Name",
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  Text("Author")
+                                ],
+                              )),
                             ),
                           );
                         },
@@ -120,15 +125,72 @@ class _ProfilescreenState extends State<Profilescreen> {
                         padding: const EdgeInsets.all(16.0),
                         margin: const EdgeInsets.all(16.0),
                         decoration: BoxDecoration(
-                          color: Colors.blueAccent.withOpacity(0.2),
+                          //  color: Colors.blueAccent.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Center(
-                          child: Text(
-                            "History Content",
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        child: Center(
+                            child: Container(
+                          //color: Colors.blue,
+                          height: 250,
+                          width: 250,
+                          child: Stack(
+                            children: [
+                              Positioned(
+                                top: 50,
+                                child: Container(
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.white),
+                                    borderRadius: BorderRadius.circular(10),
+                                    color: Colors.greenAccent.withOpacity(0.2),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Text("Book donated"),
+                                      Text("30"),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 50,
+                                left: 130,
+                                child: Container(
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.white),
+                                    borderRadius: BorderRadius.circular(10),
+                                    color: Colors.greenAccent.withOpacity(0.2),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Text("Book donated"),
+                                      Text("30"),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 130,
+                                left: 70,
+                                child: Container(
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.white),
+                                    borderRadius: BorderRadius.circular(10),
+                                    color: Colors.greenAccent.withOpacity(0.2),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Text("Book donated"),
+                                      Text("30"),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
+                        )),
                       ),
                     ],
                   ),
@@ -136,7 +198,6 @@ class _ProfilescreenState extends State<Profilescreen> {
               ],
             ),
           ),
-        
         ),
       ),
     );
