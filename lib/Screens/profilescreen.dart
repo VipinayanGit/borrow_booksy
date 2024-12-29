@@ -1,3 +1,4 @@
+import 'package:borrow_booksy/Screens/signupscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -9,7 +10,7 @@ class Profilescreen extends StatefulWidget {
 }
 
 class _ProfilescreenState extends State<Profilescreen> {
-  ImagePicker _picker = ImagePicker();
+  final GlobalKey<ScaffoldState> _ScaffoldKey = GlobalKey<ScaffoldState>();
 
   void ontapped() {
     setState(() {
@@ -22,8 +23,61 @@ class _ProfilescreenState extends State<Profilescreen> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
+        key: _ScaffoldKey,
         appBar: AppBar(
           title: Text("profilescreen"),
+          actions: [
+            Icon(Icons.person_pin),
+            SizedBox(
+              width: 10,
+            ),
+            IconButton(
+              onPressed: () {
+                _ScaffoldKey.currentState?.openEndDrawer();
+              },
+              icon: Icon(Icons.settings),
+            ),
+          ],
+        ),
+        endDrawer: Drawer(
+          child: Container(
+            child: ListView(
+              padding: EdgeInsets.all(10),
+              children: [
+                Padding(
+              padding: const EdgeInsets.only(left: 10, top: 10),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Close the drawer
+                    },
+                    icon: Icon(Icons.arrow_back),
+                  ),
+                ],
+              ),
+            ),
+                ListTile(
+                  title: Text("Contact"),
+                  onTap: () {},
+                ),
+                ListTile(
+                  title: Text("Support"),
+                  onTap: () {},
+                ),
+                ListTile(
+                  title: Text("help"),
+                  onTap: () {},
+                ),
+                ListTile(
+                  title: Text("Log out"),
+                  onTap: () {
+                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => signupscreen()));
+                  },
+                ),
+              ],
+            ),
+          ),
         ),
         body: SafeArea(
           child: Padding(
@@ -125,7 +179,7 @@ class _ProfilescreenState extends State<Profilescreen> {
                         padding: const EdgeInsets.all(16.0),
                         margin: const EdgeInsets.all(16.0),
                         decoration: BoxDecoration(
-                          //  color: Colors.blueAccent.withOpacity(0.2),
+                          //color: Colors.blueAccent.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Center(
