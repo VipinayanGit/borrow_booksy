@@ -1,28 +1,13 @@
 import 'package:flutter/material.dart';
 
 class Homescreen extends StatefulWidget {
-  List<Map<String, String>> books = [];
-  String selectedgenre = "All";
-
-  final List<String> genre = [
-    "All",
-    "Fiction",
-    "Non-Fiction",
-    "Fantasy",
-    "Mystery",
-    "Science Fiction",
-    "Biography",
-    "History"
-  ];
-
+ 
   @override
   State<Homescreen> createState() => _HomescreenState();
 }
 
 class _HomescreenState extends State<Homescreen> {
-   final filteredBooks = selectedGenre == "All"
-        ? books
-        : books.where((book) => book["genre"] == selectedGenre).toList();
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -42,9 +27,7 @@ class _HomescreenState extends State<Homescreen> {
                     decoration: InputDecoration(filled: true, border: OutlineInputBorder(borderSide: BorderSide.none)),
                   ),
                 ),
-                Container(
-                  
-                )
+                Container(),
               ],
             ),
           ),
