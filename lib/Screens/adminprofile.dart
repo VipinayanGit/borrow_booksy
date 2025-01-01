@@ -3,10 +3,10 @@ import 'signupscreen.dart';
 
 class Adminprofile extends StatelessWidget {
   const Adminprofile({super.key});
- 
+
   @override
   Widget build(BuildContext context) {
-     GlobalKey<ScaffoldState> _ScaffoldKey = GlobalKey<ScaffoldState>();
+    GlobalKey<ScaffoldState> _ScaffoldKey = GlobalKey<ScaffoldState>();
 
     return DefaultTabController(
       length: 2,
@@ -93,12 +93,24 @@ class Adminprofile extends StatelessWidget {
                               children: [
                                 SizedBox(width: 5),
                                 Container(
-                                  height: 30,
-                                  width: 150,
+                                  height: 35,
+                                  width: 85,
                                   child: ElevatedButton(
                                     onPressed: () {},
                                     child: Text(
-                                      "Add or remove books",
+                                      "Manage books",
+                                      style: TextStyle(fontSize: 10),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 5),
+                                Container(
+                                  height: 35,
+                                  width: 85,
+                                  child: ElevatedButton(
+                                    onPressed: () {},
+                                    child: Text(
+                                      "Manage users",
                                       style: TextStyle(fontSize: 10),
                                     ),
                                   ),
@@ -245,3 +257,5 @@ class Adminprofile extends StatelessWidget {
     );
   }
 }
+
+
