@@ -17,6 +17,8 @@ class _ProfilescreenState extends State<Profilescreen> {
       return print("hello");
     });
   }
+   final List<Map<String, String>> books = []; // List to store books (initially empty)
+
 
   @override
   Widget build(BuildContext context) {
@@ -45,18 +47,18 @@ class _ProfilescreenState extends State<Profilescreen> {
               padding: EdgeInsets.all(10),
               children: [
                 Padding(
-              padding: const EdgeInsets.only(left: 10, top: 10),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      Navigator.pop(context); // Close the drawer
-                    },
-                    icon: Icon(Icons.arrow_back),
+                  padding: const EdgeInsets.only(left: 10, top: 10),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          Navigator.pop(context); // Close the drawer
+                        },
+                        icon: Icon(Icons.arrow_back),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
                 ListTile(
                   title: Text("Contact"),
                   onTap: () {},
@@ -105,16 +107,17 @@ class _ProfilescreenState extends State<Profilescreen> {
                               children: [
                                 SizedBox(width: 5),
                                 Container(
-                                  height: 30,
-                                  width: 150,
-                                  child: ElevatedButton(
-                                    onPressed: () {},
-                                    child: Text(
-                                      "Add or remove books",
-                                      style: TextStyle(fontSize: 10),
-                                    ),
-                                  ),
-                                ),
+                                    height: 30,
+                                    width: 150,
+                                    child: ElevatedButton(
+                                      onPressed: () => _showdialoguebox(context),
+                                      child: Text(
+                                        "Manage Books",
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    )),
                               ],
                             )
                           ],
@@ -138,7 +141,9 @@ class _ProfilescreenState extends State<Profilescreen> {
                   child: TabBarView(
                     children: [
                       // "Your Rack" tab: Grid of books
-                      GridView.builder(
+                      books.isEmpty?Center(child:
+                       Text("your rack is empty"))
+                      :GridView.builder(
                         padding: const EdgeInsets.all(8.0),
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           childAspectRatio: 3 / 4,
@@ -146,7 +151,7 @@ class _ProfilescreenState extends State<Profilescreen> {
                           crossAxisSpacing: 10, // Spacing between columns
                           mainAxisSpacing: 10, // Spacing between rows
                         ),
-                        itemCount: 8, // Example: number of books
+                        itemCount:books.length, // Example: number of books
                         itemBuilder: (context, index) {
                           return GestureDetector(
                             onTap: ontapped,
@@ -256,4 +261,98 @@ class _ProfilescreenState extends State<Profilescreen> {
       ),
     );
   }
+}
+
+void _showdialoguebox(BuildContext context) {
+  showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Manage Books"),
+          content: Text("choose any option"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _addbookdialogue(context);
+              },
+              child: Text("add"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text("remove"),
+            ),
+          ],
+        );
+      });
+}
+
+void _addbookdialogue(BuildContext context) {
+  final _bookcontroller = TextEditingController();
+  final _authorcontroller = TextEditingController();
+
+  showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Add book"),
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                Container(
+                  child: ElevatedButton.icon(
+                    onPressed: () {},
+                    label: Text("Upload book image"),
+                    icon: Icon(Icons.upload_file),
+                  ),
+                ),
+                SizedBox(height: 10),
+                TextField(
+                  controller: _bookcontroller,
+                  decoration: InputDecoration(
+                    hintText: "Book name",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 10),
+                TextField(
+                  controller: _authorcontroller,
+                  decoration: InputDecoration(
+                    hintText: "Author name",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text("cancel"),
+                ),
+                TextButton(
+              onPressed: () {
+                String Bookname = _bookcontroller.text;
+                String authorname = _authorcontroller.text;
+                if (Bookname.isNotEmpty && authorname.isNotEmpty) {
+                  print("book:$Bookname ,Author:$authorname");
+                  Navigator.pop(context);
+                }
+              },
+              child: Text("add"),
+            ),
+              ],
+            ),
+            
+            
+          ],
+        );
+      });
 }
