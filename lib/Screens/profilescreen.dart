@@ -156,6 +156,7 @@ class _ProfilescreenState extends State<Profilescreen> {
                                     decoration: BoxDecoration(borderRadius: BorderRadius.circular(5), border: Border.all(color: Colors.white)),
                                     child: Center(
                                         child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.center,
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Container(
@@ -167,6 +168,7 @@ class _ProfilescreenState extends State<Profilescreen> {
                                         SizedBox(height: 10),
                                         Text(
                                           book["name"]!,
+                                          textAlign: TextAlign.center,
                                           style: TextStyle(fontWeight: FontWeight.bold),
                                         ),
                                         Text(book["author"]!)
@@ -398,8 +400,9 @@ class _ProfilescreenState extends State<Profilescreen> {
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
-                        overflow: TextOverflow.ellipsis, // Handles long text gracefully
-                        maxLines: 2,
+                        softWrap: true,
+                        overflow: TextOverflow.visible, // Handles long text gracefully
+                        maxLines: 4,
                       ),
                       SizedBox(height: 8),
                       // Author Name
@@ -409,6 +412,7 @@ class _ProfilescreenState extends State<Profilescreen> {
                           fontSize: 14,
                           color: Colors.grey[600],
                         ),
+                        softWrap: true,
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                       ),
