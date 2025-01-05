@@ -104,9 +104,9 @@ class _ProfilescreenState extends State<Profilescreen> {
                                     height: 30,
                                     width: 150,
                                     child: ElevatedButton(
-                                      onPressed: () => _showdialoguebox(context),
+                                      onPressed: () => _addbookdialogue(context),
                                       child: Text(
-                                        "Manage Books",
+                                        "Add Books",
                                         style: TextStyle(
                                           fontSize: 10,
                                         ),
@@ -260,33 +260,33 @@ class _ProfilescreenState extends State<Profilescreen> {
   }
 
   //Manage book dialogue box
-  void _showdialoguebox(BuildContext context) {
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text("Manage Books"),
-            content: Text("choose any option"),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _addbookdialogue(context);
-                },
-                child: Text("add"),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: Text("remove"),
-              ),
-            ],
-          );
-        });
-  }
+  // void _showdialoguebox(BuildContext context) {
+  //   showDialog(
+  //       context: context,
+  //       builder: (BuildContext context) {
+  //         return AlertDialog(
+  //           title: Text("Manage Books"),
+  //           content: Text("choose any option"),
+  //           actions: [
+  //             TextButton(
+  //               onPressed: () {
+  //                 Navigator.pop(context);
+  //                 _addbookdialogue(context);
+  //               },
+  //               child: Text("add"),
+  //             ),
+  //             TextButton(
+  //               onPressed: () {
+  //                 Navigator.pop(context);
+  //               },
+  //               child: Text("remove"),
+  //             ),
+  //           ],
+  //         );
+  //       });
+  // }
 
-  //Add book dialogue box
+//Add book dialogue box
   void _addbookdialogue(BuildContext context) {
     final _bookcontroller = TextEditingController();
     final _authorcontroller = TextEditingController();
@@ -363,31 +363,102 @@ class _ProfilescreenState extends State<Profilescreen> {
   }
 
 //book detail dialogue box
-  void _showbookdetails(BuildContext context, Map<String, String> book, int index) {
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text(book["name"]!),
-            content: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+ void _showbookdetails(BuildContext context, Map<String, String> book, int index) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        child: IntrinsicHeight(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  //padding: EdgeInsets.all(10),
-                  height: 50,
-                  width: 50,
-                  color: Colors.red,
+                // Book Image
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    color: Colors.red, // Placeholder for book image
+                    width: 100,
+                    height: 150,
+                  ),
                 ),
-                SizedBox( width: 10),
-                Column(
-                  children: [
-                    Text(book["name"]!),
-                    Text(book["author"]!)
-                  ],
-                )
+                SizedBox(width: 16),
+                // Book Details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Book Name
+                      Text(
+                        book["name"]!,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis, // Handles long text gracefully
+                        maxLines: 2,
+                      ),
+                      SizedBox(height: 8),
+                      // Author Name
+                      Text(
+                        "Author: ${book["author"]!}",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      SizedBox(height: 8),
+                      // Description (optional)
+                      // Text(
+                      //   "Description: This is a sample description of the book. "
+                      //   "It provides an overview of the book's content and purpose.",
+                      //   style: TextStyle(fontSize: 14),
+                      //   textAlign: TextAlign.justify,
+                      // ),
+                      // SizedBox(height: 16),
+                      // Action Buttons
+                      Column(
+                       // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            child: Text(
+                              "Request",
+                              style: TextStyle(color: Colors.blue),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              // Remove book from list
+                              setState(() {
+                                books.removeAt(index);
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Text(
+                              "Remove",
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-          );
-        });
-  }
+          ),
+        ),
+      );
+    },
+  );
+}
+
 }
