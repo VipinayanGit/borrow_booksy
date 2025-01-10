@@ -21,7 +21,7 @@ class _ProfilescreenState extends State<Adminprofile> {
       child: Scaffold(
         key: _ScaffoldKey,
         appBar: AppBar(
-          title: Text("profilescreen"),
+          title: Text("ADMIN PROFILE"),
           actions: [
             Icon(Icons.person_pin),
             SizedBox(
