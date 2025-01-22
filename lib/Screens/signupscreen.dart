@@ -1,4 +1,5 @@
 import 'package:borrow_booksy/Screens/Navscreen.dart';
+import 'package:borrow_booksy/Screens/superadmin.dart';
 import 'profilescreen.dart';
 import 'package:flutter/material.dart';
 import 'adminprofile.dart';
@@ -101,7 +102,14 @@ class _signupscreenState extends State<signupscreen> {
                         context,
                         MaterialPageRoute(builder: (context) => Navscreen(role: "user")),
                       );
-                    } else {
+                    }else if(id=="superadmin"){
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context)=>Superadmin())
+                        );
+                      
+                    } 
+                    else {
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid text")));
                     }
                   },
