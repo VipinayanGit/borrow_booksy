@@ -48,7 +48,7 @@ class _NavscreenState extends State<Navscreen> {
   int selectedIndex = 0;
   @override
   Widget build(BuildContext context) {
-    final isAdmin = widget.role == "admin";
+    final isAdmin = widget.role=="admin";
     final screens = isAdmin ? _adminScreens : _userScreens;
 
     return Scaffold(

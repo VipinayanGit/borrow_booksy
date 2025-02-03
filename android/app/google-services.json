@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "310006072367",
+    "project_id": "borrow-booksy",
+    "storage_bucket": "borrow-booksy.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:310006072367:android:4f63d40653babb562832da",
+        "android_client_info": {
+          "package_name": "com.example.borrow_booksy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTpEvC7H-AxVXzo7yR1VHg8PDfYKU5wBs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

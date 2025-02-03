@@ -68,7 +68,7 @@ class _ProfilescreenState extends State<Adminprofile> {
                 ListTile(
                   title: Text("Log out"),
                   onTap: () {
-                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => signupscreen()));
+                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => login()));
                   },
                 ),
               ],
