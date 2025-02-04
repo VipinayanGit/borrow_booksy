@@ -25,61 +25,62 @@ class _loginState extends State<login> {
     final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
 
 
-    Future<void> userLogin() async {
-    try {
-      UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+   Future<void> userLogin() async {
+  try {
+    UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
 
-      String userId = userCredential.user!.uid;
-      DocumentSnapshot userDoc =
-          await FirebaseFirestore.instance.collection("users").doc(userId).get();
+    String userId = userCredential.user!.uid;
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection("users").doc(userId).get();
 
-      if (!userDoc.exists) {
-        print("User not found in Firestore.");
-        return;
-      }
-
-      Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
-      String? role = userData['role'];
-      String? id = userData['id'];
-      String userName = userData['name'];
-
-      if (id == null) {
-        role = "user";
-      } else {
-        role = "admin";
-      }
-
-      if (role == "admin" && id != null && id == id) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("Welcome $userName")));
-        Navigator.of(context)
-            .pushReplacement(MaterialPageRoute(builder: (context) => Navscreen(role: "admin")));
-      } else if (role == 'user') {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("Welcome $userName")));
-        Navigator.of(context)
-            .pushReplacement(MaterialPageRoute(builder: (context) => Navscreen(role: "user")));
-      }
-    } on FirebaseAuthException catch (e) {
-      String errorMessage = "An error occurred";
-      if (e.code == 'user-not-found') {
-        errorMessage = "No User Found for that Email";
-      } else if (e.code == "wrong-password") {
-        errorMessage = "Incorrect password";
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.orangeAccent,
-          content: Text(errorMessage, style: TextStyle(fontSize: 20.0)),
-        ),
-      );
+    if (!userDoc.exists) {
+      print("User not found in Firestore.");
+      return;
     }
-  }
 
+    Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+    String? role = userData['role'];
+    String? storedAdminId = userData['id']; // Admin ID from Firestore
+    String userName = userData['name'];
+
+    if (role == "admin") {
+      if (adminclick) { 
+        // Ensure the provided admin ID matches the one in Firestore
+        if (id.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Admin ID is required for admin login"))
+          );
+          return;
+        } else if (storedAdminId != id) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Invalid Admin ID"))
+          );
+          return;
+        }
+      }
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Welcome Admin $userName")));
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => Navscreen(role: "admin")));
+    } else if (role == "user") {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Welcome $userName")));
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => Navscreen(role: "user")));
+    }
+  } on FirebaseAuthException catch (e) {
+    String errorMessage = "An error occurred";
+    if (e.code == 'user-not-found') {
+      errorMessage = "No User Found for that Email";
+    } else if (e.code == "wrong-password") {
+      errorMessage = "Incorrect password";
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.orangeAccent,
+        content: Text(errorMessage, style: TextStyle(fontSize: 20.0)),
+      ),
+    );
+  }
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
