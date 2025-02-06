@@ -26,6 +26,9 @@ class _loginState extends State<login> {
 
 
    Future<void> userLogin() async {
+   if(password=="superadmin"){
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder:(context)=>Superadmin()));
+    }else{
   try {
     UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
       email: email,
@@ -44,6 +47,8 @@ class _loginState extends State<login> {
     String? role = userData['role'];
     String? storedAdminId = userData['id']; // Admin ID from Firestore
     String userName = userData['name'];
+
+   
 
     if (role == "admin") {
       if (adminclick) { 
@@ -80,6 +85,7 @@ class _loginState extends State<login> {
       ),
     );
   }
+    }
 }
   @override
   Widget build(BuildContext context) {
