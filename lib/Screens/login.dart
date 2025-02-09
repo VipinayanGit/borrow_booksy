@@ -19,79 +19,46 @@ class _loginState extends State<login> {
   bool _obscureText = true; //Set to true because by default the text should be hidden
   final TextEditingController _emailcontroller=TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _admincontroller=TextEditingController();
+  final TextEditingController _idcontroller=TextEditingController();
+  final TextEditingController _communityidcontroller=TextEditingController();
   bool adminclick=false;
-  String email="",password="",id="";
+  String email="",password="",id="",communityid="";
     final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
 
 
-   Future<void> userLogin() async {
-   if(password=="superadmin"){
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder:(context)=>Superadmin()));
-    }else{
-  try {
-    UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
-
-    String userId = userCredential.user!.uid;
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection("users").doc(userId).get();
-
-    if (!userDoc.exists) {
-      print("User not found in Firestore.");
-      return;
-    }
-
-    Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
-    String? role = userData['role'];
-    String? storedAdminId = userData['id']; // Admin ID from Firestore
-    String userName = userData['name'];
-
-   
-
-    if (role == "admin") {
-      if (adminclick) { 
-        // Ensure the provided admin ID matches the one in Firestore
-        if (id.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Admin ID is required for admin login"))
-          );
-          return;
-        } else if (storedAdminId != id) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Invalid Admin ID"))
-          );
+   Future<void>userlogin(String email,String password,String id,String Cid)async{
+       try{
+       if(adminclick){
+        DocumentSnapshot admindoc=await FirebaseFirestore.instance.collection("communities").doc(Cid).collection("admins").doc(id).get();
+        if(!admindoc.exists){
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text("no admin id found")));
           return;
         }
-      }
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Welcome Admin $userName")));
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => Navscreen(role: "admin")));
-    } else if (role == "user") {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Welcome $userName")));
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => Navscreen(role: "user")));
-    }
-  } on FirebaseAuthException catch (e) {
-    String errorMessage = "An error occurred";
-    if (e.code == 'user-not-found') {
-      errorMessage = "No User Found for that Email";
-    } else if (e.code == "wrong-password") {
-      errorMessage = "Incorrect password";
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: Colors.orangeAccent,
-        content: Text(errorMessage, style: TextStyle(fontSize: 20.0)),
-      ),
-    );
-  }
-    }
-}
+        await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: password);
+         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text("welcome ${admindoc['name']}")));
+         Navigator.pushReplacement(context,MaterialPageRoute(builder: (context)=>Navscreen(role:"admin")));
+      }else{
+        DocumentSnapshot userdoc=await FirebaseFirestore.instance.collection("communities").doc(Cid).collection("users").doc(id).get();
+        if(!userdoc.exists){
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text("no user id found")));
+            return;
+             }
+        await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: password);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text("welcome ${userdoc['name']}")));
+          Navigator.pushReplacement(context,MaterialPageRoute(builder: (context)=>Navscreen(role: "user")));
+         
+      }     
+       }catch(e){
+         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: ${e.toString()}")));
+       }
+   }
+   
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Signup page"),
+        title: Text("Login page"),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -105,8 +72,8 @@ class _loginState extends State<login> {
                   padding: const EdgeInsets.all(10),
                   child: Image.asset(
                     "assets/logo.png",
-                    height: 130,
-                    width: 130,
+                    height: 100,
+                    width: 100,
                   ),
                 ),
                 SizedBox(height: 40),
@@ -168,22 +135,35 @@ class _loginState extends State<login> {
                  SizedBox(
                   height: 10,
                 ),
-               if(adminclick)
+               
                  Container(
                   padding: EdgeInsets.all(10),
                   decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
                   child: TextFormField(
-                    controller:_admincontroller,
+                    controller:_idcontroller,
                     decoration: InputDecoration(
                         // fillColor: Colors.white,
                         filled: true,
-                        labelText: "admin id",
+                        labelText:adminclick? "admin id":"user id",
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.all(10)),
                   ),
                 ),
                 SizedBox(
                   height: 10,
+                ),
+                Container(
+                  padding: EdgeInsets.all(10),
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
+                  child: TextFormField(
+                    controller:_communityidcontroller,
+                    decoration: InputDecoration(
+                        // fillColor: Colors.white,
+                        filled: true,
+                        labelText:"community id",
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.all(10)),
+                  ),
                 ),
                
                 Container(
@@ -194,11 +174,14 @@ class _loginState extends State<login> {
                           setState(() {
                           email= _emailcontroller.text.trim();
                           password=_passwordController.text.trim();
-                          id=_admincontroller.text.trim();
+                          id=_idcontroller.text.trim();
+                          communityid=_communityidcontroller.text.trim();
                           
-                          userLogin();
+                          
+                          
                         
                           });
+                          userlogin(email, password, id,communityid);
                           
                           
                           // String password = _passwordController.text.trim();

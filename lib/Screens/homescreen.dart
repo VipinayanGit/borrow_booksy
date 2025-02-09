@@ -19,6 +19,7 @@ class _HomescreenState extends State<Homescreen> {
           child: Padding(
             padding: EdgeInsets.all(8),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
                   width: 170,

@@ -20,60 +20,89 @@ class _SuperadminState extends State<Superadmin> {
   TextEditingController emailcontroller=TextEditingController();
   TextEditingController passwordcontroller=TextEditingController();
   TextEditingController phnocontroller=TextEditingController();
-  String selectedrole='user';
-  String email="",password="",name="",role="",flatno="";
+  TextEditingController communitynamecontroller=TextEditingController();
+  TextEditingController communityidcontroller=TextEditingController();
+  TextEditingController adminidcontroller=TextEditingController();
+  TextEditingController useridcontroller=TextEditingController();
 
-  register()async{
-    if(password!=null){
-      try{
-        UserCredential usercredential=await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: email, password: password);
+  
+  String name="",email="",password="",communityid="",adminid="",userid="";
 
-        String userid=usercredential.user!.uid;
-         String? generatedId;
-
-    String generateRandomId() {
-    Random random = Random();
-    String randomNumber = (10000 + random.nextInt(90000)).toString(); // 5-digit number
-    return randomNumber;
+Future<void>adduser(String name,String email,String password,String communityid,String userid)async{
+  DocumentSnapshot communitydoc=await FirebaseFirestore.instance.collection("communities").doc(communityid).get();
+  if(!communitydoc.exists){
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("no community")));
+    return;
   }
 
-      // If role is Admin, generate an ID with 'a' prefix
-      if (selectedrole == "admin") {
-        generatedId = "a${generateRandomId()}"; // Unique 5-character ID
-      }
+await FirebaseAuth.instance.createUserWithEmailAndPassword(
+  email: email, password: password);
 
-      // Store user data in Firestore
-      await _firestore.collection("users").doc(userid).set({
-        "name": name,
-        "email": email,
-        "password":password,
-        "role": selectedrole,
-        if (generatedId != null) "id": generatedId, // Only store for admins
-      });
+  await FirebaseFirestore.instance.collection("communities").doc(communityid).collection("users").doc(userid).set({
+    "name":name,
+    "email":email,
+     "password":password
+  });
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("User created")));
+ 
+   namecontroller.clear();
+   emailcontroller.clear();
+   passwordcontroller.clear();
+   communityidcontroller.clear();
+   useridcontroller.clear();
 
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("registered")));
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context)=>login()));
-       
-      }on FirebaseAuthException catch (e) {
-        if (e.code == 'weak-password') {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              backgroundColor: Colors.orangeAccent,
-              content: Text(
-                "Password Provided is too weak",
-                style: TextStyle(fontSize: 20.0),
-              )));
-        } else if (e.code == "email-already-in-use") {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              backgroundColor: Colors.orangeAccent,
-              content: Text(
-                "Account Already exists",
-                style: TextStyle(fontSize: 20.0),
-              )));
-        }
-      }
-    }
+
+
+}
+
+
+
+  Future<void>addadmin(String name,String email,String password,String communityid,String adminid)async{
+   
+   DocumentSnapshot communitydoc=await FirebaseFirestore.instance.collection("communities").doc(communityid).get();
+   if(!communitydoc.exists){
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("community does not exists")));
+    return;
+   }
+
+   await FirebaseAuth.instance.createUserWithEmailAndPassword(
+    email: email, password: password);
+
+
+
+
+    await FirebaseFirestore.instance.collection("communities").doc(communityid).collection("admins").doc(adminid).set({
+      "name":name,
+      "email":email,
+      "password":password
+
+    });
+   namecontroller.clear();
+   emailcontroller.clear();
+   passwordcontroller.clear();
+   communityidcontroller.clear();
+   adminidcontroller.clear();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Admin created with id $adminid")));
+
   }
+
+  Future<void>addcommunity(String id,String name)async{
+    await FirebaseFirestore.instance.collection("communities").doc(id).set(
+      {
+        "name":name
+      }
+  //  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text("Community id is $name") ));
+    );
+    communitynamecontroller.clear();
+    communityidcontroller.clear();
+     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              backgroundColor: Colors.orangeAccent,
+              content: Text(
+                "Community Created",
+                style: TextStyle(fontSize: 20.0),
+              )));
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -95,17 +124,27 @@ class _SuperadminState extends State<Superadmin> {
               width: 200,
               height: 70,
               child:ElevatedButton(onPressed: (){
-                   _addusers(context);
+                   _manageusers(context);
               }, 
-              child: Text("Add")),),
+              child: Text("Manage users")),),
               SizedBox(height: 50),
             Container(
               width: 200,
               height: 70,
               child:ElevatedButton(onPressed: (){
+                _manageadmins(context);
                
               }, 
-              child: Text("Remove")), )
+              child: Text("Manage admins")), ),
+              SizedBox(height: 50),
+              Container(
+              width: 200,
+              height: 70,
+              child:ElevatedButton(onPressed: (){
+                _managecommunity(context);
+               
+              }, 
+              child: Text("Manage community")), )
            
 
           ],
@@ -113,9 +152,34 @@ class _SuperadminState extends State<Superadmin> {
       )
     );
   }
-  
-  
-  void _addusers(BuildContext context){
+
+  void _manageusers(BuildContext context){
+    showDialog(context: context,
+     builder:(context){
+      return Dialog(
+        shape:RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        child: Container(
+          child: Padding(padding: EdgeInsets.all(10),
+          child: IntrinsicHeight(
+            child: Column(
+              children: [
+                ElevatedButton(onPressed: (){
+                  Navigator.pop(context);
+                  _addusers(context);
+                },
+                 child:Text("Add Users")),
+                 SizedBox(height: 20),
+                 ElevatedButton(onPressed: (){},
+                  child:Text("Delete Users")),
+              ],
+            ),
+          ),),
+        ),
+      );
+     });
+  }
+ 
+ void _addusers(BuildContext context){
     showDialog(
   context: context,
   builder: (context) {
@@ -128,64 +192,150 @@ class _SuperadminState extends State<Superadmin> {
           child: Column(
             mainAxisSize: MainAxisSize.min, // Adjust height to content
             children: [
-              Text("Add", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Text("Add Users", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               SizedBox(height: 10),
               Form(
+                key:_Formkey,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextField(
+                    TextFormField(
                       controller: namecontroller,
                       decoration: InputDecoration(labelText: "Enter your name"),
+                      validator:(value){
+                        if(value.toString().isEmpty){
+                          return "name should not be empty";
+                        
+                        }else{
+                          return null;
+                        }
+                      },
+                      
                     ),
-                    TextField(
-                      controller: flatcontroller,
-                      decoration: InputDecoration(labelText: "Enter your flatno"),
-                    ),
-                    TextField(
+                    // TextFormField(
+                    //   controller: flatcontroller,
+                    //   decoration: InputDecoration(labelText: "Enter your flatno"),
+                    //   validator:(value){
+                    //     if(value.toString()==null){
+                    //       return "flatno should not be empty";
+                        
+                    //     }else{
+                    //       return null;
+                    //     }
+                    //   },
+                    // ),
+                    TextFormField(
                       controller: emailcontroller,
                       decoration: InputDecoration(labelText: "Enter your email"),
+                      validator:(value){
+                        if(value.toString().isEmpty||!(value.toString().contains("@"))){
+                          return "invalid email";
+                        
+                        }else{
+                          return null;
+                        }
+                      },
                     ),
-                    TextField(
+                    TextFormField(
                       controller: passwordcontroller,
                       decoration: InputDecoration(labelText: "Enter your password"),
+                      validator:(value){
+                        if(value.toString().isEmpty){
+                          return "password should not be null";
+                        
+                        }else if(value.toString().length<3){
+                          return "very small password";
+                        }
+                        else{
+                          return null;
+                        }
+                      },
                     ),
-                    TextField(
-                      controller: phnocontroller,
-                      decoration: InputDecoration(labelText: "Enter your number"),
+                    // TextFormField(
+                    //   controller: phnocontroller,
+                    //   decoration: InputDecoration(labelText: "Enter your number"),
+                    //    validator:(value){
+                    //     if(value.toString()==null){
+                    //       return "number should not be null";
+                        
+                    //     }else if(value.toString().length<3){
+                    //       return "very small password";
+                    //     }
+                    //     else if(value.toString().length<10 || value.toString().length>10){
+                    //       return "invalid number";
+                    //     }
+                    //     else{
+                    //       return null;
+                    //     }
+                    //   },
+                    // ),
+                    // TextFormField(
+                    //   controller: adminidcontroller,
+                    //   decoration: InputDecoration(labelText: "Enter admin id"),
+                    //    validator:(value){
+                    //     if(value.toString()==null){
+                    //       return "password should not be null";
+                        
+                    //     }
+                    //     else if(value.toString().length>5){
+                    //       return "only 5 characters";
+
+                    //     }
+                    //     else{
+                    //       return null;
+                    //     }
+                    //   },
+                    // ),
+                     TextFormField(
+                      controller: useridcontroller,
+                      decoration: InputDecoration(labelText: "Enter user id"),
+                       validator:(value){
+                        if(value.toString().isEmpty){
+                          return "id should not be null";
+                        
+                        }
+                        else if(value.toString().length>5){
+                          return "only 5 characters";
+
+                        }
+                        else{
+                          return null;
+                        }
+                      },
+                    ),
+                    TextFormField(
+                       controller: communityidcontroller,
+                      decoration: InputDecoration(labelText: "enter your community id"),
+                       validator:(value){
+                        if(value.toString().isEmpty){
+                          return "type your community id";
+                        
+                        }
+                        else{
+                          return null;
+                        }
+                      },
                     ),
                    // SizedBox(height: 10),
-
-                    Material(
-                      color: Colors.transparent,
-                      child: DropdownButtonFormField(
-                        isExpanded: true,
-                        value: selectedrole,
-                        items: [
-                          DropdownMenuItem(value: 'admin', child: Text("Admin")),
-                          DropdownMenuItem(value: 'user', child: Text("User"))
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            selectedrole = value!;
-                          });
-                        },
-                      ),
-                    ),
+                    
+                  
                     SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: () {
                         setState(() {
-                          email=emailcontroller.text.trim();
-                          password=passwordcontroller.text.trim();
-                          name=namecontroller.text.trim();
-                          password=passwordcontroller.text.trim();
-                          flatno=flatcontroller.text.trim();
-                          register();
-          
+                          name=namecontroller.text;
+                          email=emailcontroller.text;
+                          password=passwordcontroller.text;
+                          communityid=communityidcontroller.text;
+                          userid=useridcontroller.text;
                         });
+                       
+                        adduser(name, email, password,communityid,userid);
+                        
+                        
+                        
                       },
-                      child: Text("Register"),
+                      child: Text("add user"),
                     ),
                   ],
                 ),
@@ -197,6 +347,263 @@ class _SuperadminState extends State<Superadmin> {
     );
   },
 );
+
+
+
+  }
+  
+
+
+  void _managecommunity(BuildContext context){
+    showDialog(context: context,
+     builder:(context){
+      return Dialog(
+        shape:RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        child: Container(
+          child: Padding(padding: EdgeInsets.all(10),
+          child: IntrinsicHeight(
+            child: Column(
+              children: [
+                ElevatedButton(onPressed: (){
+                  Navigator.pop(context);
+                  _addcommunity(context);
+                },
+                 child:Text("Add Community")),
+                 SizedBox(height: 20),
+                 ElevatedButton(onPressed: (){},
+                  child:Text("Delete Community")),
+              ],
+            ),
+          ),),
+        ),
+      );
+     });
+  }
+   void _addcommunity(BuildContext context){
+    showDialog(context: context,
+     builder:(context){
+       return Dialog(
+        shape:RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        child: Container(
+          child: Padding(padding:EdgeInsets.all(10),
+          child: IntrinsicHeight(
+            child: Column(
+
+              children: [
+               Text("Add Community", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+               Form(child:Column(
+                key:_Formkey,
+                children: [
+                   TextField(
+                      controller: communitynamecontroller,
+                      decoration: InputDecoration(labelText: "Enter community name"),
+                    ),
+                    TextField(
+                      controller: communityidcontroller,
+                      decoration: InputDecoration(labelText: "Enter community id"),
+                    ),
+
+                  SizedBox(height: 10),
+                  ElevatedButton(onPressed:(){
+                    addcommunity(communityidcontroller.text,communitynamecontroller.text);
+                    Navigator.pop(context);
+                  },
+                   child:Text("Add")),
+
+
+                ],
+               ))
+              ],
+            ),
+          )),
+        
+        ),
+       );
+     });
+  }
+  void _manageadmins(BuildContext context){
+    showDialog(context: context,
+     builder:(context){
+      return Dialog(
+        shape:RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        child: Container(
+          child: Padding(padding: EdgeInsets.all(10),
+          child: IntrinsicHeight(
+            child: Column(
+              children: [
+                ElevatedButton(onPressed: (){
+                  Navigator.pop(context);
+                  _addadmins(context);
+                },
+                 child:Text("Add admins")),
+                 SizedBox(height: 20),
+                 ElevatedButton(onPressed: (){},
+                  child:Text("Delete admins")),
+              ],
+            ),
+          ),),
+        ),
+      );
+     });
+  }
+
+ 
+  
+  
+  void _addadmins(BuildContext context){
+    showDialog(
+  context: context,
+  builder: (context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: Container(
+        padding: EdgeInsets.all(16),
+        constraints: BoxConstraints(maxWidth: 400), // Set max width
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min, // Adjust height to content
+            children: [
+              Text("Add Admins", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              SizedBox(height: 10),
+              Form(
+                key: _Formkey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: namecontroller,
+                      decoration: InputDecoration(labelText: "Enter your name"),
+                      validator:(value){
+                        if(value.toString().isEmpty){
+                          return "name should not be empty";
+                        
+                        }else{
+                          return null;
+                        }
+                      },
+                      
+                    ),
+                    // TextFormField(
+                    //   controller: flatcontroller,
+                    //   decoration: InputDecoration(labelText: "Enter your flatno"),
+                    //   validator:(value){
+                    //     if(value.toString()==null){
+                    //       return "flatno should not be empty";
+                        
+                    //     }else{
+                    //       return null;
+                    //     }
+                    //   },
+                    // ),
+                    TextFormField(
+                      controller: emailcontroller,
+                      decoration: InputDecoration(labelText: "Enter your email"),
+                      validator:(value){
+                        if(value.toString().isEmpty||!(value.toString().contains("@"))){
+                          return "invalid email";
+                        
+                        }else{
+                          return null;
+                        }
+                      },
+                    ),
+                    TextFormField(
+                      controller: passwordcontroller,
+                      decoration: InputDecoration(labelText: "Enter your password"),
+                      validator:(value){
+                        if(value.toString().isEmpty){
+                          return "password should not be null";
+                        
+                        }else if(value.toString().length<3){
+                          return "very small password";
+                        }
+                        else{
+                          return null;
+                        }
+                      },
+                    ),
+                    // TextFormField(
+                    //   controller: phnocontroller,
+                    //   decoration: InputDecoration(labelText: "Enter your number"),
+                    //    validator:(value){
+                    //     if(value.toString()==null){
+                    //       return "number should not be null";
+                        
+                    //     }else if(value.toString().length<3){
+                    //       return "very small password";
+                    //     }
+                    //     else if(value.toString().length<10 || value.toString().length>10){
+                    //       return "invalid number";
+                    //     }
+                    //     else{
+                    //       return null;
+                    //     }
+                    //   },
+                    // ),
+                    TextFormField(
+                      controller: adminidcontroller,
+                      decoration: InputDecoration(labelText: "Enter admin id"),
+                       validator:(value){
+                        if(value.toString().isEmpty){
+                          return "password should not be null";
+                        
+                        }
+                        else if(value.toString().length>5){
+                          return "only 5 characters";
+
+                        }
+                        else{
+                          return null;
+                        }
+                      },
+                    ),
+                    TextFormField(
+                       controller: communityidcontroller,
+                      decoration: InputDecoration(labelText: "enter your community id"),
+                       validator:(value){
+                        if(value.toString().isEmpty){
+                          return "type your community id";
+                        
+                        }
+                        else{
+                          return null;
+                        }
+                      },
+                    ),
+                   // SizedBox(height: 10),
+                    
+                  
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          name=namecontroller.text;
+                          email=emailcontroller.text;
+                          password=passwordcontroller.text;
+                          adminid=adminidcontroller.text;
+                          communityid=communityidcontroller.text;
+
+
+                        });
+                       
+                        addadmin(name, email, password,communityid,adminid);
+                        
+                        
+                      },
+                      child: Text("add admin"),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  },
+);
+
+
 
   }
 }
