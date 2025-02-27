@@ -1,0 +1,2 @@
+D:/projects/borrow_booksy/android/app/.cxx/RelWithDebInfo/3x2t735s/x86_64/CMakeFiles/edit_cache.dir
+D:/projects/borrow_booksy/android/app/.cxx/RelWithDebInfo/3x2t735s/x86_64/CMakeFiles/rebuild_cache.dir

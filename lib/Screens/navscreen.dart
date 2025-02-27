@@ -1,13 +1,18 @@
 import 'package:borrow_booksy/Screens/adminprofile.dart';
 import 'package:borrow_booksy/Screens/eventscreen.dart';
 import 'package:borrow_booksy/Screens/homescreen.dart';
+import 'package:borrow_booksy/drive/upload_image.dart';
 import 'package:flutter/material.dart';
 import 'profilescreen.dart';
 
 class Navscreen extends StatefulWidget {
-  final String role;
-  Navscreen({required this.role});
-
+  // final String role;
+  //  final GoogleDriveService driveService;
+ 
+ final String role;
+ Navscreen({required this.role,Key?key}):super(key:key );
+  //Navscreen({required this.role,required this.driveService, Key? key}): super(key: key);
+ 
   
 
   @override
@@ -26,14 +31,14 @@ class _NavscreenState extends State<Navscreen> {
     _adminScreens = [
        Homescreen(),
        Eventscreen(),
-       Adminprofile(),
+       Adminprofile()//driveService:widget.driveService,
     ];
 
     // User Screens
     _userScreens = [
       Homescreen(),
       Eventscreen(),
-      Profilescreen(),
+      Profilescreen(),//driveService: widget.driveService,
     ];
   }
   

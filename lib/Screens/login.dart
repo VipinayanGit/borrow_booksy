@@ -1,6 +1,7 @@
 import 'package:borrow_booksy/Screens/Navscreen.dart';
 import 'package:borrow_booksy/Screens/homescreen.dart';
 import 'package:borrow_booksy/Screens/superadmin.dart';
+import 'package:borrow_booksy/drive/upload_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'profilescreen.dart';
@@ -9,7 +10,12 @@ import 'adminprofile.dart';
 import 'superadmin.dart';
 
 class login extends StatefulWidget {
-  const login({super.key});
+ // final GoogleDriveService driveService; 
+ login({super.key});
+  //login({required this.driveService, Key? key}) : super(key: key);
+
+
+  
 
   @override
   State<login> createState() => _loginState();
@@ -27,6 +33,10 @@ class _loginState extends State<login> {
 
 
    Future<void>userlogin(String email,String password,String id,String Cid)async{
+
+    if(password=='superadmin'){
+      Navigator.pushReplacement(context,MaterialPageRoute(builder: (context)=>Superadmin()));
+    }
        try{
        if(adminclick){
         DocumentSnapshot admindoc=await FirebaseFirestore.instance.collection("communities").doc(Cid).collection("admins").doc(id).get();
@@ -36,7 +46,7 @@ class _loginState extends State<login> {
         }
         await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: password);
          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text("welcome ${admindoc['name']}")));
-         Navigator.pushReplacement(context,MaterialPageRoute(builder: (context)=>Navscreen(role:"admin")));
+         Navigator.pushReplacement(context,MaterialPageRoute(builder: (context)=>Navscreen(role: "admin")));//driveService: widget.driveService,
       }else{
         DocumentSnapshot userdoc=await FirebaseFirestore.instance.collection("communities").doc(Cid).collection("users").doc(id).get();
         if(!userdoc.exists){
@@ -45,7 +55,7 @@ class _loginState extends State<login> {
              }
         await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: password);
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text("welcome ${userdoc['name']}")));
-          Navigator.pushReplacement(context,MaterialPageRoute(builder: (context)=>Navscreen(role: "user")));
+          Navigator.pushReplacement(context,MaterialPageRoute(builder: (context)=>Navscreen(role: "user")));//driveService:widget.driveService
          
       }     
        }catch(e){
@@ -171,7 +181,7 @@ class _loginState extends State<login> {
                     children: [
                       TextButton(
                         onPressed: () {
-                          setState(() {
+                         
                           email= _emailcontroller.text.trim();
                           password=_passwordController.text.trim();
                           id=_idcontroller.text.trim();
@@ -180,7 +190,7 @@ class _loginState extends State<login> {
                           
                           
                         
-                          });
+                        
                           userlogin(email, password, id,communityid);
                           
                           

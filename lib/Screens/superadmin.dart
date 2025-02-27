@@ -1,15 +1,21 @@
 import 'package:borrow_booksy/Screens/login.dart';
+import 'package:borrow_booksy/drive/upload_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 
 class Superadmin extends StatefulWidget {
-  const Superadmin({super.key});
+  // final GoogleDriveService driveService;
+ Superadmin({super.key});
+ //Superadmin({required this.driveService, Key? key}): super(key: key);
+ 
+ 
 
   @override
   State<Superadmin> createState() => _SuperadminState();
 }
+
 
 class _SuperadminState extends State<Superadmin> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -35,21 +41,38 @@ Future<void>adduser(String name,String email,String password,String communityid,
     return;
   }
 
-await FirebaseAuth.instance.createUserWithEmailAndPassword(
+try{
+
+  UserCredential userCredential= await FirebaseAuth.instance.createUserWithEmailAndPassword(
   email: email, password: password);
+  
+   String? firebaseUid = userCredential.user?.uid;
+    if (firebaseUid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to get Firebase UID")));
+      return;
+    }
+
 
   await FirebaseFirestore.instance.collection("communities").doc(communityid).collection("users").doc(userid).set({
     "name":name,
     "email":email,
-     "password":password
+     "password":password,
+    "communityid":communityid,
+    "uid":firebaseUid
   });
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("User created")));
+   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("User created")));
  
    namecontroller.clear();
    emailcontroller.clear();
    passwordcontroller.clear();
    communityidcontroller.clear();
    useridcontroller.clear();
+
+
+
+}catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: ${e.toString()}")));
+  }
 
 
 
@@ -64,17 +87,24 @@ await FirebaseAuth.instance.createUserWithEmailAndPassword(
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("community does not exists")));
     return;
    }
-
-   await FirebaseAuth.instance.createUserWithEmailAndPassword(
+  try{
+  UserCredential userCredential= await FirebaseAuth.instance.createUserWithEmailAndPassword(
     email: email, password: password);
 
 
+ String? firebaseUid = userCredential.user?.uid;
+    if (firebaseUid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to get Firebase UID")));
+      return;
+    }
 
-
+    
     await FirebaseFirestore.instance.collection("communities").doc(communityid).collection("admins").doc(adminid).set({
       "name":name,
       "email":email,
-      "password":password
+      "password":password,
+      "communityid":communityid,
+      "uid":firebaseUid
 
     });
    namecontroller.clear();
@@ -83,7 +113,10 @@ await FirebaseAuth.instance.createUserWithEmailAndPassword(
    communityidcontroller.clear();
    adminidcontroller.clear();
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Admin created with id $adminid")));
-
+  }catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: ${e.toString()}")));
+  }
+  
   }
 
   Future<void>addcommunity(String id,String name)async{
@@ -114,7 +147,7 @@ await FirebaseAuth.instance.createUserWithEmailAndPassword(
           Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context)=>login()));}, icon:Icon(Icons.logout_outlined))],
-      ),
+     ),//driveService: widget.driveService, 
       body:Center(
         child:Column(
           
@@ -169,7 +202,9 @@ await FirebaseAuth.instance.createUserWithEmailAndPassword(
                 },
                  child:Text("Add Users")),
                  SizedBox(height: 20),
-                 ElevatedButton(onPressed: (){},
+                 ElevatedButton(onPressed: (){
+                  showDeleteUserDialog();
+                 },
                   child:Text("Delete Users")),
               ],
             ),
@@ -331,7 +366,7 @@ await FirebaseAuth.instance.createUserWithEmailAndPassword(
                         });
                        
                         adduser(name, email, password,communityid,userid);
-                        
+                        Navigator.pop(context);
                         
                         
                       },
@@ -370,7 +405,9 @@ await FirebaseAuth.instance.createUserWithEmailAndPassword(
                 },
                  child:Text("Add Community")),
                  SizedBox(height: 20),
-                 ElevatedButton(onPressed: (){},
+                 ElevatedButton(onPressed: (){
+                  showDeleteCommunityDialog();
+                 },
                   child:Text("Delete Community")),
               ],
             ),
@@ -437,7 +474,9 @@ await FirebaseAuth.instance.createUserWithEmailAndPassword(
                 },
                  child:Text("Add admins")),
                  SizedBox(height: 20),
-                 ElevatedButton(onPressed: (){},
+                 ElevatedButton(onPressed: (){
+                  showDeleteAdminDialog();
+                 },
                   child:Text("Delete admins")),
               ],
             ),
@@ -606,4 +645,334 @@ await FirebaseAuth.instance.createUserWithEmailAndPassword(
 
 
   }
+  void showDeleteCommunityDialog() {
+  TextEditingController communityIdController = TextEditingController();
+  String? foundCommunityId;
+
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: Text("Delete Community"),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Input for Community ID
+                  TextField(
+                    controller: communityIdController,
+                    decoration: InputDecoration(labelText: "Enter Community ID"),
+                  ),
+                  SizedBox(height: 10),
+              
+                  //Search Button
+                  ElevatedButton(
+                    onPressed: () async {
+                      if (communityIdController.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Enter a Community ID to search")),
+                        );
+                        return;
+                      }
+              
+                      // 🔍 Check if community exists
+                      DocumentSnapshot communityDoc = await FirebaseFirestore.instance
+                          .collection("communities")
+                          .doc(communityIdController.text)
+                          .get();
+              
+                      if (communityDoc.exists) {
+                        setState(() {
+                          foundCommunityId = communityIdController.text;
+                        });
+                      } else {
+                        setState(() {
+                          foundCommunityId = null;
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Community not found")));
+                      }
+                    },
+                    child: Text("Search Community"),
+                  ),
+                  SizedBox(height: 20),
+              
+                  // 🔹 Show Delete Button if Community Found
+                  if (foundCommunityId != null)
+                    ListTile(
+                      title: Text("Community ID: $foundCommunityId"),
+                      trailing: IconButton(
+                        icon: Icon(Icons.delete, color: Colors.red),
+                        onPressed: () async {
+                          try {
+                            //  Delete Community and Its Subcollections
+                          await FirebaseFirestore.instance
+                          .collection("communities")
+                          .doc(communityIdController.text)
+                          .delete();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Community deleted successfully")),
+                            );
+              
+                            setState(() {
+                              foundCommunityId = null;
+                              communityIdController.clear();
+                            });
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Error: ${e.toString()}")),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text("Close"),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
+  void showDeleteAdminDialog() {
+  TextEditingController communityIdController = TextEditingController();
+  TextEditingController searchController = TextEditingController();
+  String? adminId;
+  String? fbAdminUid;
+
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: Text("Delete admin"),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // TextField for Community ID Input
+                  TextField(
+                    controller: communityIdController,
+                    decoration: InputDecoration(
+                      labelText: "Enter Community ID",
+                    ),
+                  ),
+                  SizedBox(height: 10),
+              
+                  // Search Bar for User ID
+                  TextField(
+                    controller: searchController,
+                    decoration: InputDecoration(
+                      labelText: "Enter admin ID",
+                      suffixIcon: IconButton(
+                        icon: Icon(Icons.search),
+                        onPressed: () async {
+                          if (communityIdController.text.isEmpty || searchController.text.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Enter Community ID and User ID to search")));
+                            return;
+                          }
+              
+                          DocumentSnapshot adminDoc = await FirebaseFirestore.instance
+                              .collection("communities")
+                              .doc(communityIdController.text)
+                              .collection("admins")
+                              .doc(searchController.text)
+                              .get();
+              
+                          if (adminDoc.exists) {
+                            setState(() {
+                              adminId = searchController.text;
+                              fbAdminUid= adminDoc["uid"]; // 🔹 Fetch Firebase Authentication UID
+                            });
+                          } else {
+                            setState(() {
+                              adminId = null;
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("admin not found in this community")));
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+              
+                  // 🔹 Show User ID & Delete Button if User Found
+                  if (adminId != null)
+                    ListTile(
+                      title: Text("admin ID: $adminId"),
+                      trailing: IconButton(
+                        icon: Icon(Icons.delete, color: Colors.red),
+                        onPressed: () async {
+                          try {
+                            
+                            await FirebaseFirestore.instance
+                                .collection("communities")
+                                .doc(communityIdController.text)
+                                .collection("admins")
+                                .doc(adminId)
+                                .delete();
+                              if (fbAdminUid != null) {
+                              try {
+                                await FirebaseAuth.instance
+                                    .currentUser!
+                                    .delete(); //  Only works if the current user is logged in
+                              } catch (e) {
+                                print("Error deleting from authentication: $e");
+                              }
+                            }
+              
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("admin deleted successfully")));
+              
+                            setState(() {
+                              adminId = null;
+                              searchController.clear();
+                              communityIdController.clear();
+                            });
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: ${e.toString()}")));
+                          }
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text("Close"),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+  void showDeleteUserDialog() {
+  TextEditingController communityIdController = TextEditingController();
+  TextEditingController searchController = TextEditingController();
+  String? userId;
+  String? firebaseUid;
+
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: Text("Delete User"),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 🔹 TextField for Community ID Input
+                  TextField(
+                    controller: communityIdController,
+                    decoration: InputDecoration(
+                      labelText: "Enter Community ID",
+                    ),
+                  ),
+                  SizedBox(height: 10),
+              
+                  // 🔹 Search Bar for User ID
+                  TextField(
+                    controller: searchController,
+                    decoration: InputDecoration(
+                      labelText: "Enter User ID",
+                      suffixIcon: IconButton(
+                        icon: Icon(Icons.search),
+                        onPressed: () async {
+                          if (communityIdController.text.isEmpty || searchController.text.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Enter Community ID and User ID to search")));
+                            return;
+                          }
+              
+                          DocumentSnapshot userDoc = await FirebaseFirestore.instance
+                              .collection("communities")
+                              .doc(communityIdController.text)
+                              .collection("users")
+                              .doc(searchController.text)
+                              .get();
+              
+                          if (userDoc.exists) {
+                            setState(() {
+                              userId = searchController.text;
+                              firebaseUid = userDoc["uid"]; // 🔹 Fetch Firebase Authentication UID
+                            });
+                          } else {
+                            setState(() {
+                              userId = null;
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("User not found in this community")));
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+              
+                  // 🔹 Show User ID & Delete Button if User Found
+                  if (userId != null)
+                    ListTile(
+                      title: Text("User ID: $userId"),
+                      trailing: IconButton(
+                        icon: Icon(Icons.delete, color: Colors.red),
+                        onPressed: () async {
+                          try {
+                            
+                            await FirebaseFirestore.instance
+                                .collection("communities")
+                                .doc(communityIdController.text)
+                                .collection("users")
+                                .doc(userId)
+                                .delete();
+                              if (firebaseUid != null) {
+                              try {
+                                await FirebaseAuth.instance
+                                    .currentUser!
+                                    .delete(); //  Only works if the current user is logged in
+                              } catch (e) {
+                                print("Error deleting from authentication: $e");
+                              }
+                            }
+              
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("User deleted successfully")));
+              
+                            setState(() {
+                              userId = null;
+                              searchController.clear();
+                              communityIdController.clear();
+                            });
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: ${e.toString()}")));
+                          }
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text("Close"),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
 }

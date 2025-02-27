@@ -1,18 +1,45 @@
+import 'dart:io';
 import 'package:borrow_booksy/Screens/login.dart';
+import 'package:borrow_booksy/drive/upload_image.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-class Profilescreen extends StatefulWidget {
-  const Profilescreen({super.key});
 
+class Profilescreen extends StatefulWidget {
+  // final GoogleDriveService driveService;
+  // Profilescreen({required this.driveService, Key? key}) : super(key: key);
+  Profilescreen({super.key});
+
+   
   @override
   State<Profilescreen> createState() => _ProfilescreenState();
 }
 
 class _ProfilescreenState extends State<Profilescreen> {
   final GlobalKey<ScaffoldState> _ScaffoldKey = GlobalKey<ScaffoldState>();
-
+  
   final List<Map<String, String>> books = []; // List to store books (initially empty)
+  // Future<void> pickAndUploadImage(BuildContext context) async {
+  //   FilePickerResult? result = await FilePicker.platform.pickFiles();
+  //   if (result != null) {
+  //     File file = File(result.files.single.path!);
+  //     String? userId = await getCurrentUserId(); // Fetch user ID from Firebase
+  //     if (userId == null) return;
+  //     await widget.driveService.uploadImage(file, userId);
+
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text("Image uploaded successfully!")),
+  //     );
+  //   }
+  // }
+
+   // Function to fetch the current user ID from Firebase Authentication
+  Future<String?> getCurrentUserId() async {
+     String? id= FirebaseAuth.instance.currentUser?.uid;
+    return id; // Replace with actual user ID fetching logic
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +95,7 @@ class _ProfilescreenState extends State<Profilescreen> {
                 ListTile(
                   title: Text("Log out"),
                   onTap: () {
-                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => login()));
+                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => login()));//driveService: widget.driveService,
                   },
                 ),
               ],
@@ -303,7 +330,9 @@ class _ProfilescreenState extends State<Profilescreen> {
                 children: [
                   Container(
                     child: ElevatedButton.icon(
-                      onPressed: () {},
+                      onPressed: (){
+                        //pickAndUploadImage(context);
+                      },
                       label: Text("Upload book image"),
                       icon: Icon(Icons.upload_file),
                     ),
