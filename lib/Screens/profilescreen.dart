@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 class Profilescreen extends StatefulWidget {
@@ -27,6 +28,17 @@ class _ProfilescreenState extends State<Profilescreen> {
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
   String? selectedGenre;
+  String?CustomUid;
+  String?Cid;
+  @override
+  void initState(){
+    super.initState();
+    _loaduserData();
+  }
+  Future<void>_loaduserData()async{
+    SharedPreferences prefs=await SharedPreferences.getInstance();
+    
+  }
  // bool isadmin=false;
   // Future<void> pickAndUploadImage(BuildContext context) async {
   //   FilePickerResult? result = await FilePicker.platform.pickFiles();
