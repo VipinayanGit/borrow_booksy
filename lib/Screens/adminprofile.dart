@@ -28,6 +28,7 @@ class _ProfilescreenState extends State<Adminprofile> {
   TextEditingController useridcontroller=TextEditingController();
   TextEditingController communityidcontroller=TextEditingController();
   String name="",email="",password="",userid="",communityid="";
+  String?selectedGenre;
 
 
   // final Function _manageusers;
@@ -57,7 +58,8 @@ try{
     "email":email,
      "password":password,
     "communityid":communityid,
-    "uid":firebaseUid
+    "uid":firebaseUid,
+    "role":"user"
   });
    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("User created")));
  
@@ -250,7 +252,11 @@ try{
                                           textAlign: TextAlign.center,
                                           style: TextStyle(fontWeight: FontWeight.bold),
                                         ),
-                                        Text(book["author"]!)
+                                        Text(book["author"]!),
+                                         Text(
+                                          book["genre"]??"unknown genre",
+                                          style:TextStyle(fontSize:12,fontStyle:FontStyle.italic,color:Colors.grey),
+                                        ),
                                       ],
                                     )),
                                   ),
@@ -571,6 +577,9 @@ try{
   void _addbookdialogue(BuildContext context) {
     final _bookcontroller = TextEditingController();
     final _authorcontroller = TextEditingController();
+  
+    List<String> genres = ["Fiction", "Non-Fiction", "Mystery", "Fantasy", "Science Fiction", "Biography", "History", "Poetry"];
+
 
     showDialog(
         context: context,
@@ -582,7 +591,9 @@ try{
                 children: [
                   Container(
                     child: ElevatedButton.icon(
-                      onPressed: () {},
+                      onPressed: (){
+                        //pickAndUploadImage(context);
+                      },
                       label: Text("Upload book image"),
                       icon: Icon(Icons.upload_file),
                     ),
@@ -603,6 +614,26 @@ try{
                       border: OutlineInputBorder(),
                     ),
                   ),
+                  SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    value:selectedGenre,
+                    decoration: InputDecoration(
+                      hintText: "select genre",
+                      border: OutlineInputBorder(),
+                    ),
+                    items:genres.map((String genre){
+                      return DropdownMenuItem<String>(
+                        value: genre,                        
+                        child: Text(genre),
+                        );
+                    }).toList(),
+                    onChanged:(String? newvalue){
+                      setState(() {
+                          selectedGenre=newvalue;
+                      });
+                    
+                    })
+
                 ],
               ),
             ),
@@ -625,6 +656,7 @@ try{
                           books.add({
                             "name": Bookname,
                             "author": authorname,
+                            "genre":selectedGenre!,
                           });
                         });
                         Navigator.pop(context);
@@ -696,16 +728,17 @@ try{
                         maxLines: 1,
                       ),
                       SizedBox(height: 8),
-                      // Description (optional)
-                      // Text(
-                      //   "Description: This is a sample description of the book. "
-                      //   "It provides an overview of the book's content and purpose.",
-                      //   style: TextStyle(fontSize: 14),
-                      //   textAlign: TextAlign.justify,
-                      // ),
-                      // SizedBox(height: 16),
-                      // Action Buttons
-                      Column(
+                      Text(
+                        "Genre:${book["genre"]!}",
+                        style:TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        softWrap: true,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                       Column(
                        // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           TextButton(

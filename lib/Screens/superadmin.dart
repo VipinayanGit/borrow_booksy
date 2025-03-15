@@ -58,7 +58,8 @@ try{
     "email":email,
      "password":password,
     "communityid":communityid,
-    "uid":firebaseUid
+    "uid":firebaseUid,
+    "role":"user"
   });
    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("User created")));
  
@@ -104,7 +105,8 @@ try{
       "email":email,
       "password":password,
       "communityid":communityid,
-      "uid":firebaseUid
+      "uid":firebaseUid,
+      "role":"admin"
 
     });
    namecontroller.clear();
@@ -706,7 +708,7 @@ try{
                         icon: Icon(Icons.delete, color: Colors.red),
                         onPressed: () async {
                           try {
-                            //  Delete Community and Its Subcollections
+                            //Delete Community and Its Subcollections
                           await FirebaseFirestore.instance
                           .collection("communities")
                           .doc(communityIdController.text)

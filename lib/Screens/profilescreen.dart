@@ -1,8 +1,11 @@
 import 'dart:io';
+//import 'dart:nativewrappers/_internal/vm/lib/ffi_allocation_patch.dart';
 import 'package:borrow_booksy/Screens/login.dart';
 import 'package:borrow_booksy/drive/upload_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -11,7 +14,7 @@ class Profilescreen extends StatefulWidget {
   // final GoogleDriveService driveService;
   // Profilescreen({required this.driveService, Key? key}) : super(key: key);
   Profilescreen({super.key});
-
+  
    
   @override
   State<Profilescreen> createState() => _ProfilescreenState();
@@ -21,6 +24,10 @@ class _ProfilescreenState extends State<Profilescreen> {
   final GlobalKey<ScaffoldState> _ScaffoldKey = GlobalKey<ScaffoldState>();
   
   final List<Map<String, String>> books = []; // List to store books (initially empty)
+  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+  String? selectedGenre;
+ // bool isadmin=false;
   // Future<void> pickAndUploadImage(BuildContext context) async {
   //   FilePickerResult? result = await FilePicker.platform.pickFiles();
   //   if (result != null) {
@@ -36,10 +43,133 @@ class _ProfilescreenState extends State<Profilescreen> {
   // }
 
    // Function to fetch the current user ID from Firebase Authentication
-  Future<String?> getCurrentUserId() async {
-     String? id= FirebaseAuth.instance.currentUser?.uid;
-    return id; // Replace with actual user ID fetching logic
+  // Future<String?> getCurrentUserId() async {
+  //    String? id= FirebaseAuth.instance.currentUser?.uid;
+  //   return id; // Replace with actual user ID fetching logic
+  // }
+ 
+Future<void> _storebookindb(String id, String bookname, String authorname, String genre,String Cid) async {
+   
+  if (id.isEmpty) {
+    print("Error: User ID is null or empty");
+    return;
   }
+
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
+  bool isadmin = false;
+  String? communityid;
+
+  // Check if user exists in users collection
+  DocumentSnapshot userDoc = await firestore.collection("communities").doc(Cid).collection("users").doc(id).get();
+
+  if (userDoc.exists){
+    communityid=userDoc["communityid"];
+  }
+  else if (!userDoc.exists) {
+    // Check if user exists in admins collection
+    DocumentSnapshot adminDoc = await firestore.collection("communities").doc(Cid).collection("admins").doc(id).get();
+
+    if (adminDoc.exists) {
+      communityid=adminDoc["communityid"];
+      isadmin = true;
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("User not found in communnity")));
+      return;
+    }
+  }
+  
+
+  String collectionName = isadmin ? "admins" : "users";
+  DocumentReference userDocRef = firestore.collection("communities").doc(communityid).collection(collectionName).doc(id);
+
+  await userDocRef.update({
+    "books": FieldValue.arrayUnion([
+      {
+        "name": bookname,
+        "authorname": authorname,
+        "genre": genre,
+      }
+    ]),
+    "no_of_books": FieldValue.increment(1),
+  }, 
+  );
+
+ ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("book added successfully")));
+   
+} 
+Future<void> _removeBookFromDB(String id, Map<String, String> book, String Cid) async {
+  if (id.isEmpty) {
+    print("Error: User ID is null or empty");
+    return;
+  }
+
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
+  bool isAdmin = false;
+  String? communityId;
+
+  // First, check if the user is in the "users" collection
+  DocumentSnapshot userDoc = await firestore.collection("communities").doc(Cid).collection("users").doc(id).get();
+
+  if (userDoc.exists) {
+    communityId = userDoc["communityid"];
+  } else {
+    // Check if user is in "admins" collection
+    DocumentSnapshot adminDoc = await firestore.collection("communities").doc(Cid).collection("admins").doc(id).get();
+
+    if (adminDoc.exists) {
+      communityId = adminDoc["communityid"];
+      isAdmin = true;
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("User not found in community")));
+      return;
+    }
+  }
+
+  String collectionName = isAdmin ? "admins" : "users";
+  DocumentReference userDocRef = firestore.collection("communities").doc(communityId).collection(collectionName).doc(id);
+
+  // Remove the book object from the "books" array
+  await userDocRef.update({
+    "books": FieldValue.arrayRemove([
+      {
+        "name": book["name"],  
+        "authorname": book["author"],  
+        "genre": book["genre"],  
+      }
+    ]),
+    "no_of_books": FieldValue.increment(-1),
+  });
+
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Book removed successfully")));
+}
+
+Future<void>removebook ()async{
+  showDialog(context: context,
+   builder:(BuildContext context){
+        return AlertDialog(
+          content: Column(
+            children: [
+              TextField(
+                decoration: InputDecoration(
+                  hintText: "user id"
+                ),
+              ),
+             SizedBox(height: 10),
+              TextField(
+                decoration: InputDecoration(
+                  hintText: "user id"
+                ),
+              ),
+            ],
+          ),
+        );
+   });
+}
+  void logout()async{
+    await FirebaseAuth.instance.signOut();
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -94,7 +224,8 @@ class _ProfilescreenState extends State<Profilescreen> {
                 ),
                 ListTile(
                   title: Text("Log out"),
-                  onTap: () {
+                  onTap: ()async {
+                    logout();
                     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => login()));//driveService: widget.driveService,
                   },
                 ),
@@ -198,7 +329,11 @@ class _ProfilescreenState extends State<Profilescreen> {
                                           textAlign: TextAlign.center,
                                           style: TextStyle(fontWeight: FontWeight.bold),
                                         ),
-                                        Text(book["author"]!)
+                                        Text(book["author"]!),
+                                        Text(
+                                          book["genre"]??"unknown genre",
+                                          style:TextStyle(fontSize:12,fontStyle:FontStyle.italic,color:Colors.grey),
+                                        ),
                                       ],
                                     )),
                                   ),
@@ -319,6 +454,11 @@ class _ProfilescreenState extends State<Profilescreen> {
   void _addbookdialogue(BuildContext context) {
     final _bookcontroller = TextEditingController();
     final _authorcontroller = TextEditingController();
+    final _idcontroller=TextEditingController();
+    final _cidcontroller=TextEditingController();
+  
+    List<String> genres = ["Fiction", "Non-Fiction", "Mystery", "Fantasy", "Science Fiction", "Biography", "History", "Poetry"];
+    selectedGenre=null;
 
     showDialog(
         context: context,
@@ -353,6 +493,42 @@ class _ProfilescreenState extends State<Profilescreen> {
                       border: OutlineInputBorder(),
                     ),
                   ),
+                  SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    value:selectedGenre,
+                    decoration: InputDecoration(
+                      hintText: "select genre",
+                      border: OutlineInputBorder(),
+                    ),
+                    items:genres.map((String genre){
+                      return DropdownMenuItem<String>(
+                        value: genre,                        
+                        child: Text(genre),
+                        );
+                    }).toList(),
+                    onChanged:(String? newvalue){
+                      setState(() {
+                          selectedGenre=newvalue;
+                      });
+                    
+                    }),
+                    SizedBox(height: 10),
+                    TextField(
+                    controller: _idcontroller,
+                    decoration: InputDecoration(
+                      hintText: "Your id",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                   SizedBox(height: 10),
+                    TextField(
+                    controller: _cidcontroller,
+                    decoration: InputDecoration(
+                      hintText: "Community id",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+
                 ],
               ),
             ),
@@ -367,22 +543,46 @@ class _ProfilescreenState extends State<Profilescreen> {
                     child: Text("cancel"),
                   ),
                   TextButton(
-                    onPressed: () {
+                    onPressed: ()async {
                       String Bookname = _bookcontroller.text;
                       String authorname = _authorcontroller.text;
+                      String id=_idcontroller.text;
+                      String cid=_cidcontroller.text;
+                 
+                      if (id == null) {
+                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                     content: Text("Error: User not logged in"),
+                      ));
+                      return;
+                      }else if(id!=null){
+                        await _storebookindb(id,Bookname,authorname,selectedGenre!,cid);
+                        
+                      }else{
+                         ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("User not found!")),
+                  );
+                      }
+
+
                       if (Bookname.isNotEmpty && authorname.isNotEmpty) {
                         setState(() {
                           books.add({
                             "name": Bookname,
                             "author": authorname,
+                            "genre":selectedGenre!,
                           });
                         });
-                        Navigator.pop(context);
+                       Navigator.pop(context);
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                           content: Text("please fill all the fields"),
                         ));
                       }
+                      _bookcontroller.clear();
+                      _authorcontroller.clear();
+                      setState(() {
+                        selectedGenre=null;
+                      });
                     },
                     child: Text("add"),
                   ),
@@ -446,16 +646,17 @@ class _ProfilescreenState extends State<Profilescreen> {
                         maxLines: 1,
                       ),
                       SizedBox(height: 8),
-                      // Description (optional)
-                      // Text(
-                      //   "Description: This is a sample description of the book. "
-                      //   "It provides an overview of the book's content and purpose.",
-                      //   style: TextStyle(fontSize: 14),
-                      //   textAlign: TextAlign.justify,
-                      // ),
-                      // SizedBox(height: 16),
-                      // Action Buttons
-                      Column(
+                      Text(
+                        "Genre:${book["genre"]!}",
+                        style:TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        softWrap: true,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                           Column(
                        // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           TextButton(
@@ -470,10 +671,12 @@ class _ProfilescreenState extends State<Profilescreen> {
                           TextButton(
                             onPressed: () {
                               // Remove book from list
-                              setState(() {
-                                books.removeAt(index);
-                              });
-                              Navigator.pop(context);
+                              
+                             //removebook();
+                              
+
+
+                              
                             },
                             child: Text(
                               "Remove",
