@@ -1,10 +1,8 @@
 import 'package:borrow_booksy/Screens/login.dart';
-import 'package:borrow_booksy/drive/upload_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:borrow_booksy/Screens/superadmin.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 
 class Adminprofile extends StatefulWidget {
@@ -19,6 +17,15 @@ class Adminprofile extends StatefulWidget {
 }
 
 class _ProfilescreenState extends State<Adminprofile> {
+   @override
+    void initState(){
+    super.initState();
+    _loaduserData();
+  }
+
+   
+
+
   final GlobalKey<ScaffoldState> _ScaffoldKey = GlobalKey<ScaffoldState>();
   final GlobalKey<FormState> _Formkey=GlobalKey<FormState>();
   final List<Map<String, String>> books = []; // List to store books (initially empty)
@@ -29,6 +36,68 @@ class _ProfilescreenState extends State<Adminprofile> {
   TextEditingController communityidcontroller=TextEditingController();
   String name="",email="",password="",userid="",communityid="";
   String?selectedGenre;
+  String?CustomUid;
+  String?Cid;
+  String?UserType;
+  Map<String, dynamic>? userData;
+
+ Future<void>_loaduserData()async{
+    print("Loading user data from SharedPreferences...");
+    SharedPreferences prefs=await SharedPreferences.getInstance();
+    String? storeduserid=prefs.getString('userId');
+    String? storedcommunityid=prefs.getString('communityId');
+    bool isAdmin=prefs.getBool('isadmin')??false;
+
+    print("Stored User ID: $storeduserid");
+    print("Stored Community ID: $storedcommunityid");
+    print("Is Admin: $isAdmin");
+    
+
+    if(storeduserid!=null&&storedcommunityid!=null){
+      setState(() {
+        CustomUid=storeduserid;
+        Cid=storedcommunityid;
+        UserType=isAdmin?'admins':'users';
+
+      });
+
+      print("calling _fetchuserdata()..");
+      _fetchuserdata();
+    }
+    else{
+      print("Error: User ID or Community ID is null.");
+    }
+  }
+  Future<void>_fetchuserdata()async{
+    FirebaseFirestore firestore=FirebaseFirestore.instance;
+     print("Fetching user data from Firestore...");
+     print("Checking collection: communities -> $Cid -> $UserType -> $CustomUid");
+
+     print("Fetching user data...");
+     print("Community ID: $Cid");
+     print("Custom User ID: $CustomUid");
+     print("User Type: $UserType");
+
+    if (Cid == null || CustomUid == null || UserType == null) {
+    print("Error: Missing required values for fetching user data.");
+    return;
+  }
+    DocumentSnapshot UserDoc=await firestore
+    .collection("communities")
+    .doc(Cid)
+    .collection(UserType!)
+    .doc(CustomUid)
+    .get();
+
+    if(UserDoc.exists){
+      print("User data fetched successfully: ${UserDoc.data()}");
+      setState(() {
+        userData=UserDoc.data() as Map<String,dynamic>;
+      });
+    }else {
+    print("Error: User document not found in Firestore.");
+  }
+  }
 
 
   // final Function _manageusers;
@@ -157,10 +226,10 @@ try{
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Apartment name",
+                               userData != null ? userData!['communityid'] ?? 'N/A' : 'Loading...',
                               style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                             ),
-                            Text("Name"),
+                            Text(userData != null ? userData!['name'] ?? 'N/A' : 'Loading...'),
                             Text("flat no"),
                             SizedBox(height: 10),
                             Row(

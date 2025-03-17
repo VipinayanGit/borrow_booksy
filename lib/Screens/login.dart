@@ -58,11 +58,15 @@ class _loginState extends State<login> {
         await prefs.setString('communityId', communityId);
         await prefs.setString('userId', userId);
         await prefs.setBool('isadmin', adminclick);
+        
 
         // Navigate to respective screen
         Navigator.pushReplacement(context,MaterialPageRoute(builder: (context)=>adminclick?Navscreen(role: "admin"):Navscreen(role: "user")));
        
       } 
+      else{
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("User not found")));
+      }
       //  if(adminclick){
       //   DocumentSnapshot admindoc=await FirebaseFirestore.instance.collection("communities").doc(Cid).collection("admins").doc(id).get();
       //   if(!admindoc.exists){

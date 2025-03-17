@@ -22,6 +22,11 @@ class Profilescreen extends StatefulWidget {
 }
 
 class _ProfilescreenState extends State<Profilescreen> {
+  @override
+  void initState(){
+    super.initState();
+    _loaduserData();
+  }
   final GlobalKey<ScaffoldState> _ScaffoldKey = GlobalKey<ScaffoldState>();
   
   final List<Map<String, String>> books = []; // List to store books (initially empty)
@@ -30,14 +35,65 @@ class _ProfilescreenState extends State<Profilescreen> {
   String? selectedGenre;
   String?CustomUid;
   String?Cid;
-  @override
-  void initState(){
-    super.initState();
-    _loaduserData();
-  }
+  String? UserType;
+  Map<String, dynamic>? userData;
+  
   Future<void>_loaduserData()async{
+    print("Loading user data from SharedPreferences...");
     SharedPreferences prefs=await SharedPreferences.getInstance();
+    String? storeduserid=prefs.getString('userId');
+    String? storedcommunityid=prefs.getString('communityId');
+    bool isAdmin=prefs.getBool('isadmin')??false;
+
+    print("Stored User ID: $storeduserid");
+    print("Stored Community ID: $storedcommunityid");
+    print("Is Admin: $isAdmin");
     
+
+    if(storeduserid!=null&&storedcommunityid!=null){
+      setState(() {
+        CustomUid=storeduserid;
+        Cid=storedcommunityid;
+        UserType=isAdmin?'admins':'users';
+
+      });
+
+      print("calling _fetchuserdata()..");
+      _fetchuserdata();
+    }
+    else{
+      print("Error: User ID or Community ID is null.");
+    }
+  }
+  Future<void>_fetchuserdata()async{
+    FirebaseFirestore firestore=FirebaseFirestore.instance;
+     print("Fetching user data from Firestore...");
+     print("Checking collection: communities -> $Cid -> $UserType -> $CustomUid");
+
+     print("Fetching user data...");
+     print("Community ID: $Cid");
+     print("Custom User ID: $CustomUid");
+     print("User Type: $UserType");
+
+    if (Cid == null || CustomUid == null || UserType == null) {
+    print("Error: Missing required values for fetching user data.");
+    return;
+  }
+    DocumentSnapshot UserDoc=await firestore
+    .collection("communities")
+    .doc(Cid)
+    .collection(UserType!)
+    .doc(CustomUid)
+    .get();
+
+    if(UserDoc.exists){
+      print("User data fetched successfully: ${UserDoc.data()}");
+      setState(() {
+        userData=UserDoc.data() as Map<String,dynamic>;
+      });
+    }else {
+    print("Error: User document not found in Firestore.");
+  }
   }
  // bool isadmin=false;
   // Future<void> pickAndUploadImage(BuildContext context) async {
@@ -60,39 +116,10 @@ class _ProfilescreenState extends State<Profilescreen> {
   //   return id; // Replace with actual user ID fetching logic
   // }
  
-Future<void> _storebookindb(String id, String bookname, String authorname, String genre,String Cid) async {
+Future<void> _storebookindb( String bookname, String authorname, String genre) async {
    
-  if (id.isEmpty) {
-    print("Error: User ID is null or empty");
-    return;
-  }
-
-  FirebaseFirestore firestore = FirebaseFirestore.instance;
-  bool isadmin = false;
-  String? communityid;
-
-  // Check if user exists in users collection
-  DocumentSnapshot userDoc = await firestore.collection("communities").doc(Cid).collection("users").doc(id).get();
-
-  if (userDoc.exists){
-    communityid=userDoc["communityid"];
-  }
-  else if (!userDoc.exists) {
-    // Check if user exists in admins collection
-    DocumentSnapshot adminDoc = await firestore.collection("communities").doc(Cid).collection("admins").doc(id).get();
-
-    if (adminDoc.exists) {
-      communityid=adminDoc["communityid"];
-      isadmin = true;
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("User not found in communnity")));
-      return;
-    }
-  }
-  
-
-  String collectionName = isadmin ? "admins" : "users";
-  DocumentReference userDocRef = firestore.collection("communities").doc(communityid).collection(collectionName).doc(id);
+  FirebaseFirestore firestore=FirebaseFirestore.instance;
+  DocumentReference userDocRef = firestore.collection("communities").doc(Cid).collection(UserType!).doc(CustomUid);
 
   await userDocRef.update({
     "books": FieldValue.arrayUnion([
@@ -261,10 +288,10 @@ Future<void>removebook ()async{
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Apartment name",
+                             userData != null ? userData!['communityid'] ?? 'N/A' : 'Loading...',
                               style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                             ),
-                            Text("Name"),
+                             Text(userData != null ? userData!['name'] ?? 'N/A' : 'Loading...'),
                             Text("flat no"),
                             SizedBox(height: 10),
                             Row(
@@ -525,21 +552,7 @@ Future<void>removebook ()async{
                     
                     }),
                     SizedBox(height: 10),
-                    TextField(
-                    controller: _idcontroller,
-                    decoration: InputDecoration(
-                      hintText: "Your id",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                   SizedBox(height: 10),
-                    TextField(
-                    controller: _cidcontroller,
-                    decoration: InputDecoration(
-                      hintText: "Community id",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
+                  
 
                 ],
               ),
@@ -561,18 +574,11 @@ Future<void>removebook ()async{
                       String id=_idcontroller.text;
                       String cid=_cidcontroller.text;
                  
-                      if (id == null) {
-                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                     content: Text("Error: User not logged in"),
-                      ));
-                      return;
-                      }else if(id!=null){
-                        await _storebookindb(id,Bookname,authorname,selectedGenre!,cid);
-                        
-                      }else{
-                         ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("User not found!")),
-                  );
+                      if(Bookname.isNotEmpty&&authorname.isNotEmpty){
+                         await _storebookindb(Bookname,authorname,selectedGenre!);
+                      }
+                      else{
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Fill the data!")));
                       }
 
 
