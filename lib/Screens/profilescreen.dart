@@ -136,74 +136,44 @@ Future<void> _storebookindb( String bookname, String authorname, String genre) a
  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("book added successfully")));
    
 } 
-Future<void> _removeBookFromDB(String id, Map<String, String> book, String Cid) async {
-  if (id.isEmpty) {
-    print("Error: User ID is null or empty");
-    return;
-  }
-
+Future<void> _removeBookFromDB(Map<String, String> book, int index) async {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
-  bool isAdmin = false;
-  String? communityId;
+  
+  DocumentReference userDocRef = firestore
+      .collection("communities")
+      .doc(Cid)  // Ensure Cid is defined
+      .collection(UserType!)  // Ensure UserType is defined
+      .doc(CustomUid);  // Ensure CustomUid is defined
 
-  // First, check if the user is in the "users" collection
-  DocumentSnapshot userDoc = await firestore.collection("communities").doc(Cid).collection("users").doc(id).get();
+  try {
+    // Remove from Firestore
+    await userDocRef.update({
+      "books": FieldValue.arrayRemove([
+        {
+          "name": book["name"],
+          "authorname": book["author"],
+          "genre": book["genre"],
+        }
+      ]),
+      "no_of_books": FieldValue.increment(-1),
+    });
 
-  if (userDoc.exists) {
-    communityId = userDoc["communityid"];
-  } else {
-    // Check if user is in "admins" collection
-    DocumentSnapshot adminDoc = await firestore.collection("communities").doc(Cid).collection("admins").doc(id).get();
+    // ✅ Remove from GridView UI
+    setState(() {
+      books.removeAt(index);
+    });
 
-    if (adminDoc.exists) {
-      communityId = adminDoc["communityid"];
-      isAdmin = true;
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("User not found in community")));
-      return;
-    }
+    Navigator.pop(context);
+    print("✅ Book removed: ${book['name']}");
+  } catch (e) {
+    print("❌ Error removing book: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to remove book. Try again!")),
+    );
   }
-
-  String collectionName = isAdmin ? "admins" : "users";
-  DocumentReference userDocRef = firestore.collection("communities").doc(communityId).collection(collectionName).doc(id);
-
-  // Remove the book object from the "books" array
-  await userDocRef.update({
-    "books": FieldValue.arrayRemove([
-      {
-        "name": book["name"],  
-        "authorname": book["author"],  
-        "genre": book["genre"],  
-      }
-    ]),
-    "no_of_books": FieldValue.increment(-1),
-  });
-
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Book removed successfully")));
 }
 
-Future<void>removebook ()async{
-  showDialog(context: context,
-   builder:(BuildContext context){
-        return AlertDialog(
-          content: Column(
-            children: [
-              TextField(
-                decoration: InputDecoration(
-                  hintText: "user id"
-                ),
-              ),
-             SizedBox(height: 10),
-              TextField(
-                decoration: InputDecoration(
-                  hintText: "user id"
-                ),
-              ),
-            ],
-          ),
-        );
-   });
-}
+
   void logout()async{
     await FirebaseAuth.instance.signOut();
   }
@@ -492,10 +462,8 @@ Future<void>removebook ()async{
 //Add book dialogue box
   void _addbookdialogue(BuildContext context) {
     final _bookcontroller = TextEditingController();
-    final _authorcontroller = TextEditingController();
-    final _idcontroller=TextEditingController();
-    final _cidcontroller=TextEditingController();
-  
+    final _authorcontroller = TextEditingController(); 
+    
     List<String> genres = ["Fiction", "Non-Fiction", "Mystery", "Fantasy", "Science Fiction", "Biography", "History", "Poetry"];
     selectedGenre=null;
 
@@ -571,24 +539,18 @@ Future<void>removebook ()async{
                     onPressed: ()async {
                       String Bookname = _bookcontroller.text;
                       String authorname = _authorcontroller.text;
-                      String id=_idcontroller.text;
-                      String cid=_cidcontroller.text;
-                 
-                      if(Bookname.isNotEmpty&&authorname.isNotEmpty){
-                         await _storebookindb(Bookname,authorname,selectedGenre!);
-                      }
-                      else{
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Fill the data!")));
-                      }
-
-
                       if (Bookname.isNotEmpty && authorname.isNotEmpty) {
-                        setState(() {
-                          books.add({
-                            "name": Bookname,
+                            Map<String,String>newbook={
+                              "name": Bookname,
                             "author": authorname,
                             "genre":selectedGenre!,
-                          });
+                            };
+
+
+                           await _storebookindb(Bookname,authorname,selectedGenre!);
+
+                        setState(() {
+                          books.add(newbook);
                         });
                        Navigator.pop(context);
                       } else {
@@ -687,14 +649,9 @@ Future<void>removebook ()async{
                             ),
                           ),
                           TextButton(
-                            onPressed: () {
+                           onPressed: ()async {
                               // Remove book from list
-                              
-                             //removebook();
-                              
-
-
-                              
+                             await _removeBookFromDB(book, index);
                             },
                             child: Text(
                               "Remove",

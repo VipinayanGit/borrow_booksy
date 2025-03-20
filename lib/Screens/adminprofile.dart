@@ -146,6 +146,62 @@ try{
 
  
 }
+Future<void> _storebookindb( String bookname, String authorname, String genre) async {
+   
+  FirebaseFirestore firestore=FirebaseFirestore.instance;
+  DocumentReference userDocRef = firestore.collection("communities").doc(Cid).collection(UserType!).doc(CustomUid);
+
+  await userDocRef.update({
+    "books": FieldValue.arrayUnion([
+      {
+        "name": bookname,
+        "authorname": authorname,
+        "genre": genre,
+      }
+    ]),
+    "no_of_books": FieldValue.increment(1),
+  }, 
+  );
+
+ ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("book added successfully")));
+   
+} 
+Future<void> _removeBookFromDB(Map<String, String> book, int index) async {
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
+  
+  DocumentReference userDocRef = firestore
+      .collection("communities")
+      .doc(Cid)  // Ensure Cid is defined
+      .collection(UserType!)  // Ensure UserType is defined
+      .doc(CustomUid);  // Ensure CustomUid is defined
+
+  try {
+    // Remove from Firestore
+    await userDocRef.update({
+      "books": FieldValue.arrayRemove([
+        {
+          "name": book["name"],
+          "authorname": book["author"],
+          "genre": book["genre"],
+        }
+      ]),
+      "no_of_books": FieldValue.increment(-1),
+    });
+
+    // ✅ Remove from GridView UI
+    setState(() {
+      books.removeAt(index);
+    });
+
+    Navigator.pop(context);
+    print("✅ Book removed: ${book['name']}");
+  } catch (e) {
+    print("❌ Error removing book: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to remove book. Try again!")),
+    );
+  }
+}
 
 
   
@@ -717,23 +773,33 @@ try{
                     child: Text("cancel"),
                   ),
                   TextButton(
-                    onPressed: () {
+                     onPressed: ()async {
                       String Bookname = _bookcontroller.text;
                       String authorname = _authorcontroller.text;
                       if (Bookname.isNotEmpty && authorname.isNotEmpty) {
-                        setState(() {
-                          books.add({
-                            "name": Bookname,
+                            Map<String,String>newbook={
+                              "name": Bookname,
                             "author": authorname,
                             "genre":selectedGenre!,
-                          });
+                            };
+
+
+                           await _storebookindb(Bookname,authorname,selectedGenre!);
+
+                        setState(() {
+                          books.add(newbook);
                         });
-                        Navigator.pop(context);
+                       Navigator.pop(context);
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                           content: Text("please fill all the fields"),
                         ));
                       }
+                      _bookcontroller.clear();
+                      _authorcontroller.clear();
+                      setState(() {
+                        selectedGenre=null;
+                      });
                     },
                     child: Text("add"),
                   ),
@@ -820,12 +886,9 @@ try{
                             ),
                           ),
                           TextButton(
-                            onPressed: () {
+                            onPressed: ()async {
                               // Remove book from list
-                              setState(() {
-                                books.removeAt(index);
-                              });
-                              Navigator.pop(context);
+                             await _removeBookFromDB(book, index);
                             },
                             child: Text(
                               "Remove",
