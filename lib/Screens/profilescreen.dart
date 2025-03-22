@@ -721,6 +721,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                            onPressed: ()async {
                               // Remove book from list
                              await _removeBookFromDB(book, index);
+                             Navigator.pop(context);
                             },
                             child: Text(
                               "Remove",
