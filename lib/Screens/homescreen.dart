@@ -101,6 +101,7 @@ void initState(){
     print("✅ Final Book List: $allBooks");
     return allBooks;
   }
+  
 
   
   @override
@@ -151,7 +152,7 @@ Widget build(BuildContext context) {
                     var book = allBooks[index];
                     return GestureDetector(
                 onTap: () {
-                //  _showbookdetails(context, book, index);
+                 _showbookdetails(context, book, index);
                 },
                 child: Container(
                   decoration: BoxDecoration(
@@ -194,6 +195,109 @@ Widget build(BuildContext context) {
         ],
       ),
     ),
+  );
+}
+ void _showbookdetails(BuildContext context, Map<String, dynamic> book, int index) {
+    if (book == null||book.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Book details not available.")));
+    return;
+  }
+
+  String bookName = book["name"] ?? "Unknown Book";
+  String authorName = book["authorname"] ?? "Unknown Author";
+  String genre = book["genre"] ?? "Unknown Genre";
+  String owner=book["owner-id"]?? "Unknown owner";
+
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        child: IntrinsicHeight(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Book Image
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    color: Colors.red, // Placeholder for book image
+                    width: 100,
+                    height: 150,
+                  ),
+                ),
+                SizedBox(width: 16),
+                // Book Details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Book Name
+                      Text(
+                        bookName,
+                        style: TextStyle(
+                          
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      
+                        softWrap: true,
+                        overflow: TextOverflow.visible, // Handles long text gracefully
+                        maxLines: 4,
+                      ),
+                      SizedBox(height: 8),
+                      // Author Name
+                      Text(
+                        "Author: ${authorName}",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                          
+                        ),
+                        
+                        softWrap: true,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 3,
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        "Genre:${genre}",
+                        style:TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        softWrap: true,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                      ),
+                           Column(
+                       // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                         
+                         owner!=CustomUid?TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            child: Text(
+                              "Request",
+                              style: TextStyle(color: Colors.blue),
+                            ),
+                          ):
+                          Container(),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
   );
 }
 

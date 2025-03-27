@@ -1,14 +1,10 @@
-import 'dart:io';
+
 //import 'dart:nativewrappers/_internal/vm/lib/ffi_allocation_patch.dart';
 import 'package:borrow_booksy/Screens/login.dart';
-import 'package:borrow_booksy/drive/upload_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:file_picker/file_picker.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:googleapis/pubsub/v1.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 
@@ -128,6 +124,7 @@ Future<void> _storebookindb( String bookname, String authorname, String genre) a
         "name": bookname,
         "authorname": authorname,
         "genre": genre,
+        "owner-id":CustomUid
       }
     ]),
     "no_of_books": FieldValue.increment(1),
@@ -167,6 +164,7 @@ Future<void> _removeBookFromDB(Map<String, dynamic> book, int index) async {
           "name": book["name"],
           "authorname": book["authorname"], // Ensure Firestore uses this key
           "genre": book["genre"],
+          "owner-id":book["owner-id"]
         }
       ]),
       "no_of_books": FieldValue.increment(-1),
@@ -182,7 +180,7 @@ Future<void> _removeBookFromDB(Map<String, dynamic> book, int index) async {
     // UI should update via StreamBuilder, but if not, refresh manually
     setState(() {}); // Force UI refresh
 
-    Navigator.pop(context);
+   // Navigator.pop(context);
   } catch (e) {
     print("❌ Error removing book: $e");
     ScaffoldMessenger.of(context).showSnackBar(
@@ -362,7 +360,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
             itemBuilder: (context, index) {
                 final book = books[index];
                String bookName = book["name"] ?? "Unknown Book";
-               String authorName = book["author"] ?? "Unknown Author";
+               String authorName = book["authorname"] ?? "Unknown Author";
                String genre = book["genre"] ?? "Unknown Genre";
 
               
@@ -493,32 +491,6 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
     );
   }
 
-  //Manage book dialogue box
-  // void _showdialoguebox(BuildContext context) {
-  //   showDialog(
-  //       context: context,
-  //       builder: (BuildContext context) {
-  //         return AlertDialog(
-  //           title: Text("Manage Books"),
-  //           content: Text("choose any option"),
-  //           actions: [
-  //             TextButton(
-  //               onPressed: () {
-  //                 Navigator.pop(context);
-  //                 _addbookdialogue(context);
-  //               },
-  //               child: Text("add"),
-  //             ),
-  //             TextButton(
-  //               onPressed: () {
-  //                 Navigator.pop(context);
-  //               },
-  //               child: Text("remove"),
-  //             ),
-  //           ],
-  //         );
-  //       });
-  // }
 
 //Add book dialogue box
   void _addbookdialogue(BuildContext context) {
@@ -644,6 +616,8 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
   String bookName = book["name"] ?? "Unknown Book";
   String authorName = book["author"] ?? "Unknown Author";
   String genre = book["genre"] ?? "Unknown Genre";
+  String owner=book["owner-id"]?? "Unknown owner";
+
   showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -675,9 +649,11 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                       Text(
                         bookName,
                         style: TextStyle(
+                          
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
+                      
                         softWrap: true,
                         overflow: TextOverflow.visible, // Handles long text gracefully
                         maxLines: 4,
@@ -689,10 +665,12 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[600],
+                          
                         ),
+                        
                         softWrap: true,
                         overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
+                        maxLines: 3,
                       ),
                       SizedBox(height: 8),
                       Text(
@@ -703,7 +681,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                         ),
                         softWrap: true,
                         overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
+                        maxLines: 2,
                       ),
                            Column(
                        // mainAxisAlignment: MainAxisAlignment.spaceEvenly,

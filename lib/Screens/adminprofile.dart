@@ -28,7 +28,7 @@ class _ProfilescreenState extends State<Adminprofile> {
 
   final GlobalKey<ScaffoldState> _ScaffoldKey = GlobalKey<ScaffoldState>();
   final GlobalKey<FormState> _Formkey=GlobalKey<FormState>();
-  final List<Map<String, String>> books = []; // List to store books (initially empty)
+  final List<Map<String, dynamic>> books = []; // List to store books (initially empty)
   TextEditingController namecontroller=TextEditingController();
   TextEditingController emailcontroller=TextEditingController();
   TextEditingController passwordcontroller =TextEditingController();
@@ -157,6 +157,7 @@ Future<void> _storebookindb( String bookname, String authorname, String genre) a
         "name": bookname,
         "authorname": authorname,
         "genre": genre,
+        "owner-id":CustomUid
       }
     ]),
     "no_of_books": FieldValue.increment(1),
@@ -166,41 +167,74 @@ Future<void> _storebookindb( String bookname, String authorname, String genre) a
  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("book added successfully")));
    
 } 
-Future<void> _removeBookFromDB(Map<String, String> book, int index) async {
+Future<void> _removeBookFromDB(Map<String, dynamic> book, int index) async {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
-  
+
   DocumentReference userDocRef = firestore
       .collection("communities")
-      .doc(Cid)  // Ensure Cid is defined
-      .collection(UserType!)  // Ensure UserType is defined
-      .doc(CustomUid);  // Ensure CustomUid is defined
+      .doc(Cid)  
+      .collection(UserType!)  
+      .doc(CustomUid);  
 
   try {
+    print("📌 Books before removal: $books");
+    print("📌 Attempting to remove: ${book['name']} - ${book['authorname']} - ${book['genre']}");
+
+    // Fetch latest books list from Firestore before attempting to remove
+    DocumentSnapshot snapshot = await userDocRef.get();
+    List<dynamic> currentBooks = (snapshot.data() as Map<String, dynamic>)["books"] ?? [];
+    print("📌 Firestore Books before removing: $currentBooks");
+
+    if (currentBooks.isEmpty || index >= currentBooks.length) {
+      print("⚠️ Books list is empty or index out of range!");
+      return;
+    }
+
     // Remove from Firestore
     await userDocRef.update({
       "books": FieldValue.arrayRemove([
         {
           "name": book["name"],
-          "authorname": book["author"],
+          "authorname": book["authorname"], // Ensure Firestore uses this key
           "genre": book["genre"],
+          "owner-id":book["owner-id"]
         }
       ]),
       "no_of_books": FieldValue.increment(-1),
     });
 
-    // ✅ Remove from GridView UI
-    setState(() {
-      books.removeAt(index);
-    });
+    print("✅ Firestore update successful!");
 
-    Navigator.pop(context);
-    print("✅ Book removed: ${book['name']}");
+    // Fetch books again to force UI update
+    snapshot = await userDocRef.get();
+    List<dynamic> updatedBooks = (snapshot.data() as Map<String, dynamic>)["books"] ?? [];
+    print("📌 Firestore Books after removing: $updatedBooks");
+
+    // UI should update via StreamBuilder, but if not, refresh manually
+    setState(() {}); // Force UI refresh
+
+   // Navigator.pop(context);
   } catch (e) {
     print("❌ Error removing book: $e");
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Failed to remove book. Try again!")),
+      SnackBar(content: Text("Failed to remove book: $e")),
     );
   }
+}
+Stream<List<Map<String, dynamic>>> getBooksStream() {
+  return FirebaseFirestore.instance
+      .collection("communities")
+      .doc(Cid)
+      .collection(UserType!)
+      .doc(CustomUid)
+      .snapshots()
+      .map((doc) {
+        if (doc.exists && doc.data() != null) {
+          List<dynamic>? bookList = doc.get("books");
+          return (bookList ?? []).map((e) => Map<String, dynamic>.from(e)).toList();
+        }
+        return []; // Return empty list instead of null
+      });
 }
 
 
@@ -341,53 +375,77 @@ Future<void> _removeBookFromDB(Map<String, String> book, int index) async {
                   child: TabBarView(
                     children: [
                       // "Your Rack" tab: Grid of books
-                      books.isEmpty
-                          ? Center(child: Text("your rack is empty"))
-                          : GridView.builder(
-                              padding: const EdgeInsets.all(8.0),
-                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                childAspectRatio: 3 / 4,
-                                crossAxisCount: 2, // Number of columns
-                                crossAxisSpacing: 10, // Spacing between columns
-                                mainAxisSpacing: 10, // Spacing between rows
-                              ),
-                              itemCount: books.length, // Example: number of books
-                              itemBuilder: (context, index) {
-                                final book = books[index];
-                                return GestureDetector(
-                                  onTap: () {
-                                    _showbookdetails(context, book, index);
-                                  },
-                                  child: Container(
-                                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(5), border: Border.all(color: Colors.white)),
-                                    child: Center(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Container(
-                                          //padding: EdgeInsets.all(10),
-                                          height: 100,
-                                          width: 90,
-                                          color: Colors.red,
-                                        ),
-                                        SizedBox(height: 10),
-                                        Text(
-                                          book["name"]!,
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(fontWeight: FontWeight.bold),
-                                        ),
-                                        Text(book["author"]!),
-                                         Text(
-                                          book["genre"]??"unknown genre",
-                                          style:TextStyle(fontSize:12,fontStyle:FontStyle.italic,color:Colors.grey),
-                                        ),
-                                      ],
-                                    )),
-                                  ),
-                                );
-                              },
-                            ),
+                      StreamBuilder<List<Map<String,dynamic>>>(
+                        stream:getBooksStream(),
+                        builder:(context,snapshot){
+                          if(snapshot.connectionState==ConnectionState.waiting){
+                            return Center(child: CircularProgressIndicator());
+                          }
+                        if(!snapshot.hasData||snapshot.data!.isEmpty){
+                          return Center(child: Text("your rack is empty"));
+                        }
+                        List<Map<String,dynamic>>books=snapshot.data!;
+
+                        return GridView.builder(
+            padding: const EdgeInsets.all(8.0),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              childAspectRatio: 3 / 4,
+              crossAxisCount: 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+            ),
+            itemCount: books.length,
+            itemBuilder: (context, index) {
+                final book = books[index];
+               String bookName = book["name"] ?? "Unknown Book";
+               String authorName = book["authorname"] ?? "Unknown Author";
+               String genre = book["genre"] ?? "Unknown Genre";
+
+              
+
+              return GestureDetector(
+                onTap: () {
+                  _showbookdetails(context, book, index);
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(5),
+                    border: Border.all(color: Colors.white),
+                  ),
+                  child: Center(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          height: 100,
+                          width: 90,
+                          color: Colors.red, // Placeholder for book image
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          bookName,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text(authorName),
+                        Text(
+                          genre,
+                          style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+
+                         }
+                      ),
+
+
+                     
                       // "History" tab: Single container
                       Container(
                         padding: const EdgeInsets.all(16.0),
@@ -671,34 +729,7 @@ Future<void> _removeBookFromDB(Map<String, String> book, int index) async {
 
 
   }
-  //Manage book dialogue box
-  // void _showdialoguebox(BuildContext context) {
-  //   showDialog(
-  //       context: context,
-  //       builder: (BuildContext context) {
-  //         return AlertDialog(
-  //           title: Text("Manage Books"),
-  //           content: Text("choose any option"),
-  //           actions: [
-  //             TextButton(
-  //               onPressed: () {
-  //                 Navigator.pop(context);
-  //                 _addbookdialogue(context);
-  //               },
-  //               child: Text("add"),
-  //             ),
-  //             TextButton(
-  //               onPressed: () {
-  //                 Navigator.pop(context);
-  //               },
-  //               child: Text("remove"),
-  //             ),
-  //           ],
-  //         );
-  //       });
-  // }
-
-//Add book dialogue box
+ 
   void _addbookdialogue(BuildContext context) {
     final _bookcontroller = TextEditingController();
     final _authorcontroller = TextEditingController();
@@ -811,7 +842,17 @@ Future<void> _removeBookFromDB(Map<String, String> book, int index) async {
   }
 
 //book detail dialogue box
- void _showbookdetails(BuildContext context, Map<String, String> book, int index) {
+ void _showbookdetails(BuildContext context, Map<String, dynamic> book, int index) {
+    if (book == null) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Book details not available.")));
+    return;
+  }
+
+  String bookName = book["name"] ?? "Unknown Book";
+  String authorName = book["author"] ?? "Unknown Author";
+  String genre = book["genre"] ?? "Unknown Genre";
+  String owner=book["owner-id"]?? "Unknown owner";
+
   showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -841,11 +882,13 @@ Future<void> _removeBookFromDB(Map<String, String> book, int index) async {
                     children: [
                       // Book Name
                       Text(
-                        book["name"]!,
+                        bookName,
                         style: TextStyle(
+                          
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
+                      
                         softWrap: true,
                         overflow: TextOverflow.visible, // Handles long text gracefully
                         maxLines: 4,
@@ -853,27 +896,29 @@ Future<void> _removeBookFromDB(Map<String, String> book, int index) async {
                       SizedBox(height: 8),
                       // Author Name
                       Text(
-                        "Author: ${book["author"]!}",
+                        "Author: ${authorName}",
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[600],
+                          
                         ),
+                        
                         softWrap: true,
                         overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
+                        maxLines: 3,
                       ),
                       SizedBox(height: 8),
                       Text(
-                        "Genre:${book["genre"]!}",
+                        "Genre:${genre}",
                         style:TextStyle(
                           fontSize: 12,
                           color: Colors.grey[600],
                         ),
                         softWrap: true,
                         overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
+                        maxLines: 2,
                       ),
-                       Column(
+                           Column(
                        // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           TextButton(
@@ -886,9 +931,10 @@ Future<void> _removeBookFromDB(Map<String, String> book, int index) async {
                             ),
                           ),
                           TextButton(
-                            onPressed: ()async {
+                           onPressed: ()async {
                               // Remove book from list
                              await _removeBookFromDB(book, index);
+                             Navigator.pop(context);
                             },
                             child: Text(
                               "Remove",
@@ -908,6 +954,7 @@ Future<void> _removeBookFromDB(Map<String, String> book, int index) async {
     },
   );
 }
+
 void showDeleteUserDialog() {
   TextEditingController communityIdController = TextEditingController();
   TextEditingController searchController = TextEditingController();
