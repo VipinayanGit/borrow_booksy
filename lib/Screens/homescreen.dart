@@ -15,13 +15,20 @@ void initState(){
     super.initState();
   
     _loaduserData();
+  //  fetchBooksFromFirestore();
+  // futureBooks = fetchBooksFromFirestore();
    
   }
  String? selectedGenre;
+  Future<List<Map<String, dynamic>>>? futureBooks;
   String?CustomUid;
   String?Cid;
   String? UserType;
   Map<String, dynamic>? userData;
+  List<Map<String, dynamic>> allBooks = [];
+  List<Map<String, dynamic>> filteredBooks = []; 
+  TextEditingController searchController = TextEditingController();
+
   
 
 
@@ -42,6 +49,7 @@ void initState(){
         CustomUid=storeduserid;
         Cid=storedcommunityid;
         UserType=isAdmin?'admins':'users';
+        futureBooks=fetchBooksFromFirestore();
 
       });
       print("Cid updated: $Cid");
@@ -53,54 +61,85 @@ void initState(){
       print("Error: User ID or Community ID is null.");
     }
   }
-   Future<List<Map<String, dynamic>>> fetchBooksFromFirestore() async {
-    if (Cid == null) {
-      print("⚠️ Cid is null, returning empty book list.");
-      return []; // Return empty list if community ID is not set
-    }
-
-    List<Map<String, dynamic>> allBooks = [];
-
-    // ✅ Fetch Books from Users Subcollection
-    var usersSnapshot = await FirebaseFirestore.instance
-        .collection("communities")
-        .doc(Cid)
-        .collection("users")
-        .get();
-
-    for (var userDoc in usersSnapshot.docs) {
-      var userData = userDoc.data();
-      print("👤 User Found: ${userDoc.id}, Data: $userData");
-      if (userData.containsKey("books")) {
-        print("📚 Books from ${userDoc.id}: ${userData["books"]}");
-        allBooks.addAll(List<Map<String, dynamic>>.from(userData["books"]));
-      } else {
-        print("⚠️ No books field found for user ${userDoc.id}");
-      }
-    }
-
-    // ✅ Fetch Books from Admins Subcollection
-    var adminsSnapshot = await FirebaseFirestore.instance
-        .collection("communities")
-        .doc(Cid)
-        .collection("admins")
-        .get();
-
-    for (var adminDoc in adminsSnapshot.docs) {
-      var adminData = adminDoc.data();
-      print("👤 Admin Found: ${adminDoc.id}, Data: $adminData");
-
-      if (adminData.containsKey("books")) {
-        print("📚 Books from ${adminDoc.id}: ${adminData["books"]}");
-        allBooks.addAll(List<Map<String, dynamic>>.from(adminData["books"]));
-      } else {
-        print("⚠️ No books field found for admin ${adminDoc.id}");
-      }
-    }
-
-    print("✅ Final Book List: $allBooks");
-    return allBooks;
+Future<List<Map<String, dynamic>>> fetchBooksFromFirestore() async {
+  if (Cid == null) {
+    print("⚠️ Cid is null, returning empty book list.");
+    setState(() {
+      allBooks = [];
+      filteredBooks = [];
+    });
+    return [];
   }
+
+  print("📡 Fetching books for Community ID: $Cid...");
+  
+  Set<String> bookNames = {};
+  List<Map<String, dynamic>> books = [];
+
+  // ✅ Fetch Books from Users Subcollection
+  var usersSnapshot = await FirebaseFirestore.instance
+      .collection("communities")
+      .doc(Cid)
+      .collection("users")
+      .get();
+
+  for (var userDoc in usersSnapshot.docs) {
+    var userData = userDoc.data();
+    if (userData.containsKey("books")) {
+      for (var book in List<Map<String, dynamic>>.from(userData["books"])) {
+        if (!bookNames.contains(book["name"])) {
+          bookNames.add(book["name"]);
+          books.add(book);
+        }
+      }
+    }
+  }
+
+  // ✅ Fetch Books from Admins Subcollection
+  var adminsSnapshot = await FirebaseFirestore.instance
+      .collection("communities")
+      .doc(Cid)
+      .collection("admins")
+      .get();
+
+  for (var adminDoc in adminsSnapshot.docs) {
+    var adminData = adminDoc.data();
+    if (adminData.containsKey("books")) {
+      for (var book in List<Map<String, dynamic>>.from(adminData["books"])) {
+        if (!bookNames.contains(book["name"])) {
+          bookNames.add(book["name"]);
+          books.add(book);
+        }
+      }
+    }
+  }
+
+  // ✅ Update state here, so no need for `fetchBooks()`
+  setState(() {
+    allBooks = books;
+    filteredBooks = books; // Initialize filteredBooks here
+  });
+
+  print("✅ Final Book List: ${allBooks.length}");
+  return books;
+}
+
+void filterBooks(String query) {
+  setState(() {
+    if (query.isEmpty) {
+      filteredBooks = List.from(allBooks); // ✅ Reset to full list if search is empty
+    } else {
+      filteredBooks = allBooks.where((book) {
+        String bookName = book["name"]?.toLowerCase() ?? "";
+        String authorName = book["authorname"]?.toLowerCase() ?? "";
+        String searchText = query.toLowerCase();
+        return bookName.contains(searchText) || authorName.contains(searchText);
+      }).toList();
+    }
+  });
+
+  print("🔍 Filtered Books: ${filteredBooks.length}"); // ✅ Debugging log
+}
   
 
   
@@ -115,11 +154,14 @@ Widget build(BuildContext context) {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             child: TextField(
+              controller: searchController,
+              onChanged: (query) => filterBooks(query),
               decoration: InputDecoration(
                 prefixIcon: Icon(Icons.search),
                 hintText: "Search books...",
                 filled: true,
                 border: OutlineInputBorder(borderSide: BorderSide.none),
+                
               ),
             ),
           ),
@@ -127,7 +169,7 @@ Widget build(BuildContext context) {
           // 🔹 Fetch Books (Fixed)
           Expanded(
             child: FutureBuilder<List<Map<String, dynamic>>>(
-                future: Cid == null ? Future.value([]) : fetchBooksFromFirestore(),
+                future: Cid == null ? Future.value([]) :futureBooks,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(child: CircularProgressIndicator());
@@ -137,6 +179,9 @@ Widget build(BuildContext context) {
                   }
 
                  var allBooks = snapshot.data!;
+                 if(filteredBooks.isEmpty){
+                  filteredBooks=allBooks;
+                 }
                //  print("Final Book List: $allBooks");
                 //GridView Fix: Wrapped with Expanded
                 return GridView.builder(
@@ -147,9 +192,9 @@ Widget build(BuildContext context) {
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
                   ),
-                  itemCount: allBooks.length,
+                  itemCount: filteredBooks.length,
                   itemBuilder: (context, index) {
-                    var book = allBooks[index];
+                    var book = filteredBooks[index];
                     return GestureDetector(
                 onTap: () {
                  _showbookdetails(context, book, index);
