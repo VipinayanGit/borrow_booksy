@@ -21,7 +21,7 @@ class _ProfilescreenState extends State<Adminprofile> {
     void initState(){
     super.initState();
     _loaduserData();
-  }
+  } 
 
    
 
