@@ -140,7 +140,65 @@ void filterBooks(String query) {
 
   print("🔍 Filtered Books: ${filteredBooks.length}"); // ✅ Debugging log
 }
-  
+  Future<void>SendBookRequest({
+    required String ownerId,
+    required String bookId,
+    required String bookName,
+    required String? requesterId,
+  })async{
+    
+
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    final requestsRef = firestore
+      .collection("communities")
+      .doc(Cid)
+      .collection(UserType!)
+      .doc(CustomUid)
+      .collection("requests");
+
+
+    try{
+
+       QuerySnapshot existing = await requestsRef
+        .where("requesterId", isEqualTo: requesterId)
+        .where("bookId", isEqualTo: bookId)
+        .where("status", isEqualTo: "pending")
+        .get();
+
+    if (existing.docs.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("You have already requested this book.")),
+      );
+      return;
+    }
+     
+       await firestore
+         .collection("communities")
+         .doc(Cid)
+         .collection(UserType!)
+         .doc(CustomUid)
+         .collection("requests")
+         .add({
+          "requesterId": requesterId,
+          "bookId": bookId,
+          "bookName": bookName,
+          "status": "pending",
+          "timestamp": FieldValue.serverTimestamp(),
+          "requested-To":ownerId
+         });
+
+  ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Request sent to book owner.")),
+    );
+    }catch(e){
+         print("Error sending request: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Error sending request.")),
+    );
+    }
+
+
+  }
 
   
   @override
@@ -252,6 +310,7 @@ Widget build(BuildContext context) {
   String authorName = book["authorname"] ?? "Unknown Author";
   String genre = book["genre"] ?? "Unknown Genre";
   String owner=book["owner-id"]?? "Unknown owner";
+  String bookid=book["book-id"]??"unknown bookid";
 
   showDialog(
     context: context,
@@ -318,13 +377,34 @@ Widget build(BuildContext context) {
                         overflow: TextOverflow.ellipsis,
                         maxLines: 2,
                       ),
+                      Text(
+                        "Owner:${owner}",
+                        style:TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        softWrap: true,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                      ),
                            Column(
                        // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                          
                          owner!=CustomUid?TextButton(
-                            onPressed: () {
-                              Navigator.pop(context);
+                            onPressed: ()async {
+                          Navigator.pop(context);
+
+                          await SendBookRequest(
+                            ownerId: owner,
+                            bookId: bookid,
+                            bookName: bookName,
+                            requesterId:CustomUid
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Request sent to book owner")),
+      );
+                          
                             },
                             child: Text(
                               "Request",

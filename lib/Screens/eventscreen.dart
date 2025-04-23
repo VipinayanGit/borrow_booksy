@@ -97,17 +97,14 @@ class _EventscreenState extends State<Eventscreen> {
         title: Text("Message Details"),
         content: Text(message),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("Close"),
-          ),
-          TextButton(
+          
+          UserType=='admins'?  TextButton(
             onPressed: () {
               _deleteMessage(messageId);
               Navigator.pop(context);
             },
             child: Text("Delete", style: TextStyle(color: Colors.red)),
-          ),
+          ):Container()
         ],
       ),
     );
@@ -173,10 +170,11 @@ class _EventscreenState extends State<Eventscreen> {
                 );
               },
             ),
-      floatingActionButton: FloatingActionButton(
+          
+       floatingActionButton: UserType=='admins'?  FloatingActionButton(
         onPressed: _showMessageDialog,
         child: Icon(Icons.add),
-      ),
+      ):null,
     );
   }
 }

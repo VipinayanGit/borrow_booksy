@@ -6,6 +6,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
+
+
 
 
 class Profilescreen extends StatefulWidget {
@@ -117,14 +120,20 @@ Future<void> _storebookindb( String bookname, String authorname, String genre) a
    
   FirebaseFirestore firestore=FirebaseFirestore.instance;
   DocumentReference userDocRef = firestore.collection("communities").doc(Cid).collection(UserType!).doc(CustomUid);
+   
+
+   var uuid=Uuid();
+  String bookId = uuid.v4();
 
   await userDocRef.update({
     "books": FieldValue.arrayUnion([
-      {
+      { 
+        "book-id":bookId,
         "name": bookname,
         "authorname": authorname,
         "genre": genre,
-        "owner-id":CustomUid
+        "owner-id":CustomUid,
+        "timestamp": DateTime.now()
       }
     ]),
     "no_of_books": FieldValue.increment(1),
@@ -369,33 +378,54 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                 onTap: () {
                   _showbookdetails(context, book, index);
                 },
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(5),
-                    border: Border.all(color: Colors.white),
-                  ),
-                  child: Center(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          height: 100,
-                          width: 90,
-                          color: Colors.red, // Placeholder for book image
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          bookName,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text(authorName),
-                        Text(
-                          genre,
-                          style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.grey),
-                        ),
-                      ],
+                child: SizedBox(
+                  height: 190,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(5),
+                      border: Border.all(color: Colors.white),
+                    ),
+                    child: Center(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(8),
+                            height: 100,
+                            width: 90,
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image:AssetImage("assets/bookpic.jpg") ,
+                                
+                              ),
+                              //borderRadius: BorderRadius.circular(8),
+                            //  color: Colors.red,
+                            ), // Placeholder for book image
+                          ),
+                          SizedBox(height: 10),
+                          Flexible(
+                            child: Text(
+                              bookName,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontWeight: FontWeight.bold,
+                              fontSize: 13),
+                              maxLines: 2,
+                              softWrap: true,
+                            ),
+                          ),
+                          Flexible(child: Text(authorName,
+                          style: TextStyle(fontSize: 12),)),
+                          Flexible(
+                            child: Text(
+                              genre,
+                              style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.grey),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -633,7 +663,12 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: Container(
-                    color: Colors.red, // Placeholder for book image
+                    decoration: BoxDecoration(
+                      image: DecorationImage(image:AssetImage("assets/bookpic.jpg"),
+                      fit: BoxFit.cover) ,
+                      
+                    ),
+                   // color: Colors.red, // Placeholder for book image
                     width: 100,
                     height: 150,
                   ),
