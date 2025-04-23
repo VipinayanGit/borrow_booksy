@@ -263,18 +263,18 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                     ],
                   ),
                 ),
-                ListTile(
-                  title: Text("Contact"),
-                  onTap: () {},
-                ),
-                ListTile(
-                  title: Text("Support"),
-                  onTap: () {},
-                ),
-                ListTile(
-                  title: Text("help"),
-                  onTap: () {},
-                ),
+                // ListTile(
+                //   title: Text("Contact"),
+                //   onTap: () {},
+                // ),
+                // ListTile(
+                //   title: Text("Support"),
+                //   onTap: () {},
+                // ),
+                // ListTile(
+                //   title: Text("help"),
+                //   onTap: () {},
+                // ),
                 ListTile(
                   title: Text("Log out"),
                   onTap: ()async {
@@ -401,9 +401,8 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                                 image:AssetImage("assets/bookpic.jpg") ,
                                 
                               ),
-                              //borderRadius: BorderRadius.circular(8),
-                            //  color: Colors.red,
-                            ), // Placeholder for book image
+                             
+                            ), 
                           ),
                           SizedBox(height: 10),
                           Flexible(

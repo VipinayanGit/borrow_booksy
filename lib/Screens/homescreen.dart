@@ -270,7 +270,13 @@ Widget build(BuildContext context) {
                         Container(
                           height: 100,
                           width: 90,
-                          color: Colors.red, // Placeholder for book image
+                         decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image:AssetImage("assets/bookpic.jpg") ,
+                                
+                              ),
+                             
+                            ),  // Placeholder for book image
                         ),
                         SizedBox(height: 10),
                         Text(
@@ -327,7 +333,13 @@ Widget build(BuildContext context) {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: Container(
-                    color: Colors.red, // Placeholder for book image
+                    decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image:AssetImage("assets/bookpic.jpg") ,
+                                
+                              ),
+                             
+                            ), // Placeholder for book image
                     width: 100,
                     height: 150,
                   ),
