@@ -1,9 +1,11 @@
 import 'package:borrow_booksy/Screens/login.dart';
+import 'package:borrow_booksy/Screens/requestscreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
+import 'package:uuid/uuid.dart';
 
 class Adminprofile extends StatefulWidget {
   //  final GoogleDriveService driveService;
@@ -150,14 +152,20 @@ Future<void> _storebookindb( String bookname, String authorname, String genre) a
    
   FirebaseFirestore firestore=FirebaseFirestore.instance;
   DocumentReference userDocRef = firestore.collection("communities").doc(Cid).collection(UserType!).doc(CustomUid);
+   
+
+   var uuid=Uuid();
+  String bookId = uuid.v4();
 
   await userDocRef.update({
     "books": FieldValue.arrayUnion([
-      {
+      { 
+        "book-id":bookId,
         "name": bookname,
         "authorname": authorname,
         "genre": genre,
-        "owner-id":CustomUid
+        "owner-id":CustomUid,
+        "timestamp": DateTime.now()
       }
     ]),
     "no_of_books": FieldValue.increment(1),
@@ -194,10 +202,12 @@ Future<void> _removeBookFromDB(Map<String, dynamic> book, int index) async {
     await userDocRef.update({
       "books": FieldValue.arrayRemove([
         {
+          "book-id":book["book-id"],
           "name": book["name"],
           "authorname": book["authorname"], // Ensure Firestore uses this key
           "genre": book["genre"],
-          "owner-id":book["owner-id"]
+          "owner-id":book["owner-id"],
+          "timestamp":book["timestamp"]
         }
       ]),
       "no_of_books": FieldValue.increment(-1),
@@ -248,7 +258,9 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
         appBar: AppBar(
           title: Text("ADMIN PROFILE"),
           actions: [
-            Icon(Icons.person_pin),
+             IconButton(
+              onPressed:(){Navigator.push(context,MaterialPageRoute(builder: (context)=>Requestscreen()));},
+              icon:Icon(Icons.person)),
             SizedBox(
               width: 10,
             ),
@@ -420,7 +432,13 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                         Container(
                           height: 100,
                           width: 90,
-                          color: Colors.red, // Placeholder for book image
+                           decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image:AssetImage("assets/bookpic.jpg") ,
+                                
+                              ),
+                             
+                            ), // Placeholder for book image
                         ),
                         SizedBox(height: 10),
                         Text(
@@ -868,7 +886,13 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: Container(
-                    color: Colors.red, // Placeholder for book image
+                    decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image:AssetImage("assets/bookpic.jpg") ,
+                                
+                              ),
+                             
+                            ), // Placeholder for book image
                     width: 100,
                     height: 150,
                   ),

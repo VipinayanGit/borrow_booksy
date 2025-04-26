@@ -144,7 +144,7 @@ void filterBooks(String query) {
     required String ownerId,
     required String bookId,
     required String bookName,
-    required String? requesterId,
+    required String? requesterName,
   })async{
     
 
@@ -152,15 +152,13 @@ void filterBooks(String query) {
     final requestsRef = firestore
       .collection("communities")
       .doc(Cid)
-      .collection(UserType!)
-      .doc(CustomUid)
       .collection("requests");
 
 
     try{
 
        QuerySnapshot existing = await requestsRef
-        .where("requesterId", isEqualTo: requesterId)
+        .where("requesterId", isEqualTo: requesterName)
         .where("bookId", isEqualTo: bookId)
         .where("status", isEqualTo: "pending")
         .get();
@@ -172,14 +170,8 @@ void filterBooks(String query) {
       return;
     }
      
-       await firestore
-         .collection("communities")
-         .doc(Cid)
-         .collection(UserType!)
-         .doc(CustomUid)
-         .collection("requests")
-         .add({
-          "requesterId": requesterId,
+       await requestsRef.add({
+          "requesterName": requesterName,
           "bookId": bookId,
           "bookName": bookName,
           "status": "pending",
@@ -411,7 +403,7 @@ Widget build(BuildContext context) {
                             ownerId: owner,
                             bookId: bookid,
                             bookName: bookName,
-                            requesterId:CustomUid
+                            requesterName:CustomUid
                             );
                             ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Request sent to book owner")),

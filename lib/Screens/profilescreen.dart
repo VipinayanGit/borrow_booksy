@@ -1,6 +1,7 @@
 
 //import 'dart:nativewrappers/_internal/vm/lib/ffi_allocation_patch.dart';
 import 'package:borrow_booksy/Screens/login.dart';
+import 'package:borrow_booksy/Screens/requestscreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -170,10 +171,12 @@ Future<void> _removeBookFromDB(Map<String, dynamic> book, int index) async {
     await userDocRef.update({
       "books": FieldValue.arrayRemove([
         {
+          "book-id":book["book-id"],
           "name": book["name"],
           "authorname": book["authorname"], // Ensure Firestore uses this key
           "genre": book["genre"],
-          "owner-id":book["owner-id"]
+          "owner-id":book["owner-id"],
+          "timestamp":book["timestamp"]
         }
       ]),
       "no_of_books": FieldValue.increment(-1),
@@ -233,7 +236,9 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
         appBar: AppBar(
           title: Text("profilescreen"),
           actions: [
-            Icon(Icons.person_pin),
+            IconButton(
+              onPressed:(){Navigator.push(context,MaterialPageRoute(builder: (context)=>Requestscreen()));},
+              icon:Icon(Icons.person)),
             SizedBox(
               width: 10,
             ),
