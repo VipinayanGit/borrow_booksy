@@ -31,8 +31,9 @@ class _SuperadminState extends State<Superadmin> {
 
   
   String name="",email="",password="",communityid="",adminid="",userid="";
+  dynamic flatno="";String phno="";
 
-Future<void>adduser(String name,String email,String password,String communityid,String userid)async{
+Future<void>adduser(String name,String email,String password,String communityid,String userid,String flatno,String phno)async{
   DocumentSnapshot communitydoc=await FirebaseFirestore.instance.collection("communities").doc(communityid).get();
   if(!communitydoc.exists){
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("no community")));
@@ -54,10 +55,12 @@ try{
   await FirebaseFirestore.instance.collection("communities").doc(communityid).collection("users").doc(userid).set({
     "name":name,
     "email":email,
-     "password":password,
+    "password":password,
     "communityid":communityid,
     "uid":firebaseUid,
-    "role":"user"
+    "role":"user",
+    "flatno":flatno,
+    "phno":phno
   });
    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("User created")));
  
@@ -66,6 +69,8 @@ try{
    passwordcontroller.clear();
    communityidcontroller.clear();
    useridcontroller.clear();
+   flatcontroller.clear();
+   phnocontroller.clear();
 
 
 
@@ -79,7 +84,7 @@ try{
 
 
 
-  Future<void>addadmin(String name,String email,String password,String communityid,String adminid)async{
+  Future<void>addadmin(String name,String email,String password,String communityid,String adminid,String flatno,String phno)async{
    
    DocumentSnapshot communitydoc=await FirebaseFirestore.instance.collection("communities").doc(communityid).get();
    if(!communitydoc.exists){
@@ -104,7 +109,9 @@ try{
       "password":password,
       "communityid":communityid,
       "uid":firebaseUid,
-      "role":"admin"
+      "role":"admin",
+      "flatno":flatno,
+      "phno":phno
 
     });
    namecontroller.clear();
@@ -112,6 +119,8 @@ try{
    passwordcontroller.clear();
    communityidcontroller.clear();
    adminidcontroller.clear();
+   phnocontroller.clear();
+   flatcontroller.clear();
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Admin created with id $adminid")));
   }catch (e) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: ${e.toString()}")));
@@ -247,18 +256,18 @@ try{
                       },
                       
                     ),
-                    // TextFormField(
-                    //   controller: flatcontroller,
-                    //   decoration: InputDecoration(labelText: "Enter your flatno"),
-                    //   validator:(value){
-                    //     if(value.toString()==null){
-                    //       return "flatno should not be empty";
+                    TextFormField(
+                      controller: flatcontroller,
+                      decoration: InputDecoration(labelText: "Enter your flatno"),
+                      validator:(value){
+                        if(value.toString()==null){
+                          return "flatno should not be empty";
                         
-                    //     }else{
-                    //       return null;
-                    //     }
-                    //   },
-                    // ),
+                        }else{
+                          return null;
+                        }
+                      },
+                    ),
                     TextFormField(
                       controller: emailcontroller,
                       decoration: InputDecoration(labelText: "Enter your email"),
@@ -286,41 +295,26 @@ try{
                         }
                       },
                     ),
-                    // TextFormField(
-                    //   controller: phnocontroller,
-                    //   decoration: InputDecoration(labelText: "Enter your number"),
-                    //    validator:(value){
-                    //     if(value.toString()==null){
-                    //       return "number should not be null";
+                    TextFormField(
+                      controller: phnocontroller,
+                      decoration: InputDecoration(labelText: "Enter your number"),
+                       validator:(value){
                         
-                    //     }else if(value.toString().length<3){
-                    //       return "very small password";
-                    //     }
-                    //     else if(value.toString().length<10 || value.toString().length>10){
-                    //       return "invalid number";
-                    //     }
-                    //     else{
-                    //       return null;
-                    //     }
-                    //   },
-                    // ),
-                    // TextFormField(
-                    //   controller: adminidcontroller,
-                    //   decoration: InputDecoration(labelText: "Enter admin id"),
-                    //    validator:(value){
-                    //     if(value.toString()==null){
-                    //       return "password should not be null";
+                        if((value.toString()).isEmpty){
+                          return "number should not be null";
                         
-                    //     }
-                    //     else if(value.toString().length>5){
-                    //       return "only 5 characters";
-
-                    //     }
-                    //     else{
-                    //       return null;
-                    //     }
-                    //   },
-                    // ),
+                        }else if(value.toString().length<3){
+                          return "very small password";
+                        }
+                        else if(value.toString().length<10 || value.toString().length>10){
+                          return "invalid number";
+                        }
+                        else{
+                          return null;
+                        }
+                      },
+                    ),
+                    
                      TextFormField(
                       controller: useridcontroller,
                       decoration: InputDecoration(labelText: "Enter user id"),
@@ -329,10 +323,7 @@ try{
                           return "id should not be null";
                         
                         }
-                        else if(value.toString().length>5){
-                          return "only 5 characters";
-
-                        }
+                       
                         else{
                           return null;
                         }
@@ -363,9 +354,12 @@ try{
                           password=passwordcontroller.text;
                           communityid=communityidcontroller.text;
                           userid=useridcontroller.text;
+                          flatno=flatcontroller.text;
+                          phno=phnocontroller.text;
+                          
                         });
                        
-                        adduser(name, email, password,communityid,userid);
+                        adduser(name, email, password,communityid,userid,flatno,phno);
                         Navigator.pop(context);
                         
                         
@@ -522,18 +516,18 @@ try{
                       },
                       
                     ),
-                    // TextFormField(
-                    //   controller: flatcontroller,
-                    //   decoration: InputDecoration(labelText: "Enter your flatno"),
-                    //   validator:(value){
-                    //     if(value.toString()==null){
-                    //       return "flatno should not be empty";
+                    TextFormField(
+                      controller: flatcontroller,
+                      decoration: InputDecoration(labelText: "Enter your flatno"),
+                      validator:(value){
+                        if((value.toString()).isEmpty){
+                          return "flatno should not be empty";
                         
-                    //     }else{
-                    //       return null;
-                    //     }
-                    //   },
-                    // ),
+                        }else{
+                          return null;
+                        }
+                      },
+                    ),
                     TextFormField(
                       controller: emailcontroller,
                       decoration: InputDecoration(labelText: "Enter your email"),
@@ -561,24 +555,24 @@ try{
                         }
                       },
                     ),
-                    // TextFormField(
-                    //   controller: phnocontroller,
-                    //   decoration: InputDecoration(labelText: "Enter your number"),
-                    //    validator:(value){
-                    //     if(value.toString()==null){
-                    //       return "number should not be null";
+                    TextFormField(
+                      controller: phnocontroller,
+                      decoration: InputDecoration(labelText: "Enter your number"),
+                       validator:(value){
+                        if((value.toString()).isEmpty){
+                          return "number should not be null";
                         
-                    //     }else if(value.toString().length<3){
-                    //       return "very small password";
-                    //     }
-                    //     else if(value.toString().length<10 || value.toString().length>10){
-                    //       return "invalid number";
-                    //     }
-                    //     else{
-                    //       return null;
-                    //     }
-                    //   },
-                    // ),
+                        }else if(value.toString().length<3){
+                          return "very small password";
+                        }
+                        else if(value.toString().length<10 || value.toString().length>10){
+                          return "invalid number";
+                        }
+                        else{
+                          return null;
+                        }
+                      },
+                    ),
                     TextFormField(
                       controller: adminidcontroller,
                       decoration: InputDecoration(labelText: "Enter admin id"),
@@ -621,11 +615,13 @@ try{
                           password=passwordcontroller.text;
                           adminid=adminidcontroller.text;
                           communityid=communityidcontroller.text;
+                          flatno=flatcontroller.text;
+                          phno=phnocontroller.text;
 
 
                         });
                        
-                        addadmin(name, email, password,communityid,adminid);
+                        addadmin(name, email, password,communityid,adminid,flatno,phno);
                         
                         
                       },

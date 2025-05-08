@@ -24,6 +24,7 @@ void initState(){
   String?CustomUid;
   String?Cid;
   String? UserType;
+  String? flat;
   Map<String, dynamic>? userData;
   List<Map<String, dynamic>> allBooks = [];
   List<Map<String, dynamic>> filteredBooks = []; 
@@ -38,16 +39,19 @@ void initState(){
     String? storeduserid=prefs.getString('userId');
     String? storedcommunityid=prefs.getString('communityId');
     bool isAdmin=prefs.getBool('isadmin')??false;
+    String?storedflatno=prefs.getString('flat');
 
     print("Stored User ID: $storeduserid");
     print("Stored Community ID: $storedcommunityid");
     print("Is Admin: $isAdmin");
+    print("flat no: $flat");
     
 
     if(storeduserid!=null&&storedcommunityid!=null){
       setState(() {
         CustomUid=storeduserid;
         Cid=storedcommunityid;
+        flat=storedflatno;
         UserType=isAdmin?'admins':'users';
         futureBooks=fetchBooksFromFirestore();
 
@@ -140,15 +144,39 @@ void filterBooks(String query) {
 
   print("🔍 Filtered Books: ${filteredBooks.length}"); // ✅ Debugging log
 }
+
+
+
   Future<void>SendBookRequest({
+    
     required String ownerId,
     required String bookId,
     required String bookName,
     required String? requesterName,
+    required String? flatno
+
   })async{
-    
+    String?ownerflatno;
+    String?ownermobno;
+    String?ownername;
 
     FirebaseFirestore firestore = FirebaseFirestore.instance;
+    final ownerdoc=await fetchOwnerDetails(ownerId);
+    
+
+    if(ownerdoc!=null){
+      ownerflatno=ownerdoc['flatno'];
+      ownermobno=ownerdoc['phno'];
+      ownername=ownerdoc['name'];
+
+    }else {
+  print("Owner not found in users or admins.");
+}
+
+  
+
+
+
     final requestsRef = firestore
       .collection("communities")
       .doc(Cid)
@@ -158,7 +186,7 @@ void filterBooks(String query) {
     try{
 
        QuerySnapshot existing = await requestsRef
-        .where("requesterId", isEqualTo: requesterName)
+        .where("requesterName", isEqualTo: requesterName)
         .where("bookId", isEqualTo: bookId)
         .where("status", isEqualTo: "pending")
         .get();
@@ -176,7 +204,11 @@ void filterBooks(String query) {
           "bookName": bookName,
           "status": "pending",
           "timestamp": FieldValue.serverTimestamp(),
-          "requested-To":ownerId
+          "requested-To":ownerId,
+          "requester-flatno":flatno,
+          "ownername":ownername,
+          "ownerflatno":ownerflatno,
+          "ownermobno":ownermobno
          });
 
   ScaffoldMessenger.of(context).showSnackBar(
@@ -191,6 +223,38 @@ void filterBooks(String query) {
 
 
   }
+  
+Future<Map<String, dynamic>?> fetchOwnerDetails(String ownerid) async{
+
+
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+  final userdoc = await firestore
+      .collection("communities")
+      .doc(Cid)
+      .collection('users')
+      .doc(ownerid)
+      .get();
+
+  if (userdoc.exists) {
+    return userdoc.data(); 
+  }
+
+  final admindoc = await firestore
+      .collection("communities")
+      .doc(Cid)
+      .collection('admins')
+      .doc(ownerid)
+      .get();
+
+  if (admindoc.exists) {
+    return admindoc.data(); 
+  }
+
+  return null;
+
+
+}
 
   
   @override
@@ -403,7 +467,8 @@ Widget build(BuildContext context) {
                             ownerId: owner,
                             bookId: bookid,
                             bookName: bookName,
-                            requesterName:CustomUid
+                            requesterName:CustomUid,
+                            flatno:flat
                             );
                             ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Request sent to book owner")),

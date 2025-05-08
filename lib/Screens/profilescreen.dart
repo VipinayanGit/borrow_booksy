@@ -37,6 +37,7 @@ class _ProfilescreenState extends State<Profilescreen> {
   String?CustomUid;
   String?Cid;
   String? UserType;
+  String?flat;
   Map<String, dynamic>? userData;
   
   Future<void>_loaduserData()async{
@@ -44,6 +45,7 @@ class _ProfilescreenState extends State<Profilescreen> {
     SharedPreferences prefs=await SharedPreferences.getInstance();
     String? storeduserid=prefs.getString('userId');
     String? storedcommunityid=prefs.getString('communityId');
+    String? storedflatno=prefs.getString('flat');
     bool isAdmin=prefs.getBool('isadmin')??false;
 
     print("Stored User ID: $storeduserid");
@@ -55,6 +57,7 @@ class _ProfilescreenState extends State<Profilescreen> {
       setState(() {
         CustomUid=storeduserid;
         Cid=storedcommunityid;
+        flat=storedflatno;
         UserType=isAdmin?'admins':'users';
 
       });
@@ -69,11 +72,12 @@ class _ProfilescreenState extends State<Profilescreen> {
   Future<void>_fetchuserdata()async{
     FirebaseFirestore firestore=FirebaseFirestore.instance;
      print("Fetching user data from Firestore...");
-     print("Checking collection: communities -> $Cid -> $UserType -> $CustomUid");
+     print("Checking collection: communities -> $Cid -> $UserType -> $CustomUid->$flat");
 
      print("Fetching user data...");
      print("Community ID: $Cid");
      print("Custom User ID: $CustomUid");
+     print('flat no: $flat');
      print("User Type: $UserType");
 
     if (Cid == null || CustomUid == null || UserType == null) {
@@ -134,7 +138,8 @@ Future<void> _storebookindb( String bookname, String authorname, String genre) a
         "authorname": authorname,
         "genre": genre,
         "owner-id":CustomUid,
-        "timestamp": DateTime.now()
+        "timestamp": DateTime.now(),
+        "flatno":flat
       }
     ]),
     "no_of_books": FieldValue.increment(1),
@@ -176,7 +181,8 @@ Future<void> _removeBookFromDB(Map<String, dynamic> book, int index) async {
           "authorname": book["authorname"], // Ensure Firestore uses this key
           "genre": book["genre"],
           "owner-id":book["owner-id"],
-          "timestamp":book["timestamp"]
+          "timestamp":book["timestamp"],
+          "flatno":book['flatno']
         }
       ]),
       "no_of_books": FieldValue.increment(-1),
@@ -311,7 +317,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                               style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                             ),
                              Text(userData != null ? userData!['name'] ?? 'N/A' : 'Loading...'),
-                            Text("flat no"),
+                            Text(userData != null ? userData!['flatno'] ?? 'N/A' : 'Loading...'),
                             SizedBox(height: 10),
                             Row(
                               children: [
@@ -725,15 +731,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                            Column(
                        // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            child: Text(
-                              "Request",
-                              style: TextStyle(color: Colors.blue),
-                            ),
-                          ),
+                          
                           TextButton(
                            onPressed: ()async {
                               // Remove book from list

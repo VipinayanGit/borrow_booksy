@@ -36,11 +36,14 @@ class _ProfilescreenState extends State<Adminprofile> {
   TextEditingController passwordcontroller =TextEditingController();
   TextEditingController useridcontroller=TextEditingController();
   TextEditingController communityidcontroller=TextEditingController();
-  String name="",email="",password="",userid="",communityid="";
+  TextEditingController flatcontroller=TextEditingController();
+  TextEditingController phnocontroller=TextEditingController();
+  String name="",email="",password="",userid="",communityid="",flatno="",phno="";
   String?selectedGenre;
   String?CustomUid;
   String?Cid;
   String?UserType;
+  String?flat;
   Map<String, dynamic>? userData;
 
  Future<void>_loaduserData()async{
@@ -48,17 +51,20 @@ class _ProfilescreenState extends State<Adminprofile> {
     SharedPreferences prefs=await SharedPreferences.getInstance();
     String? storeduserid=prefs.getString('userId');
     String? storedcommunityid=prefs.getString('communityId');
+    String? storedflatno=prefs.getString('flat');
     bool isAdmin=prefs.getBool('isadmin')??false;
 
     print("Stored User ID: $storeduserid");
     print("Stored Community ID: $storedcommunityid");
     print("Is Admin: $isAdmin");
+    print("Stored flatno:$storedflatno");
     
 
     if(storeduserid!=null&&storedcommunityid!=null){
       setState(() {
         CustomUid=storeduserid;
         Cid=storedcommunityid;
+        flat=storedflatno;
         UserType=isAdmin?'admins':'users';
 
       });
@@ -73,12 +79,13 @@ class _ProfilescreenState extends State<Adminprofile> {
   Future<void>_fetchuserdata()async{
     FirebaseFirestore firestore=FirebaseFirestore.instance;
      print("Fetching user data from Firestore...");
-     print("Checking collection: communities -> $Cid -> $UserType -> $CustomUid");
+     print("Checking collection: communities -> $Cid -> $UserType -> $CustomUid->$flat");
 
      print("Fetching user data...");
      print("Community ID: $Cid");
      print("Custom User ID: $CustomUid");
      print("User Type: $UserType");
+     print("flat no: $flat");
 
     if (Cid == null || CustomUid == null || UserType == null) {
     print("Error: Missing required values for fetching user data.");
@@ -104,8 +111,8 @@ class _ProfilescreenState extends State<Adminprofile> {
 
   // final Function _manageusers;
   // Adminprofile(this._manageusers);
-  Future<void>adduser(String name,String email,String password,String communityid,String userid)async{
-  DocumentSnapshot communitydoc=await FirebaseFirestore.instance.collection("communities").doc(communityid).get();
+  Future<void>adduser(String name,String email,String password,String userid,String flatno,String phno)async{
+  DocumentSnapshot communitydoc=await FirebaseFirestore.instance.collection("communities").doc(Cid).get();
   if(!communitydoc.exists){
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("no community")));
     return;
@@ -124,21 +131,25 @@ try{
     }
 
 
-  await FirebaseFirestore.instance.collection("communities").doc(communityid).collection("users").doc(userid).set({
+  await FirebaseFirestore.instance.collection("communities").doc(Cid).collection("users").doc(userid).set({
     "name":name,
     "email":email,
      "password":password,
     "communityid":communityid,
     "uid":firebaseUid,
-    "role":"user"
+    "role":"user",
+    "flatno":flatno,
+    "phno":phno
   });
    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("User created")));
  
    namecontroller.clear();
    emailcontroller.clear();
    passwordcontroller.clear();
-   communityidcontroller.clear();
+  
    useridcontroller.clear();
+   flatcontroller.clear();
+   phnocontroller.clear();
 
 
 
@@ -165,7 +176,8 @@ Future<void> _storebookindb( String bookname, String authorname, String genre) a
         "authorname": authorname,
         "genre": genre,
         "owner-id":CustomUid,
-        "timestamp": DateTime.now()
+        "timestamp": DateTime.now(),
+        "flatno":flat
       }
     ]),
     "no_of_books": FieldValue.increment(1),
@@ -207,7 +219,8 @@ Future<void> _removeBookFromDB(Map<String, dynamic> book, int index) async {
           "authorname": book["authorname"], // Ensure Firestore uses this key
           "genre": book["genre"],
           "owner-id":book["owner-id"],
-          "timestamp":book["timestamp"]
+          "timestamp":book["timestamp"],
+          "flatno":book['flatno']
         }
       ]),
       "no_of_books": FieldValue.increment(-1),
@@ -290,18 +303,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                     ],
                   ),
                 ),
-                ListTile(
-                  title: Text("Contact"),
-                  onTap: () {},
-                ),
-                ListTile(
-                  title: Text("Support"),
-                  onTap: () {},
-                ),
-                ListTile(
-                  title: Text("help"),
-                  onTap: () {},
-                ),
+                
                 ListTile(
                   title: Text("Log out"),
                   onTap: () {
@@ -332,7 +334,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                               style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                             ),
                             Text(userData != null ? userData!['name'] ?? 'N/A' : 'Loading...'),
-                            Text("flat no"),
+                            Text(userData != null ? userData!['flatno'] ?? 'N/A' : 'Loading...'),
                             SizedBox(height: 10),
                             Row(
                               children: [
@@ -378,10 +380,10 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                     icon: Icon(Icons.book),
                     text: "your Rack",
                   ),
-                  Tab(
-                    icon: Icon(Icons.book),
-                    text: "History",
-                  ),
+                  // Tab(
+                  //   icon: Icon(Icons.book),
+                  //   text: "History",
+                  // ),
                 ]),
                 Expanded(
                   child: TabBarView(
@@ -465,77 +467,77 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
 
                      
                       // "History" tab: Single container
-                      Container(
-                        padding: const EdgeInsets.all(16.0),
-                        margin: const EdgeInsets.all(16.0),
-                        decoration: BoxDecoration(
-                          //color: Colors.blueAccent.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Center(
-                            child: Container(
-                          //color: Colors.blue,
-                          height: 250,
-                          width: 250,
-                          child: Stack(
-                            children: [
-                              Positioned(
-                                top: 50,
-                                child: Container(
-                                  padding: EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.white),
-                                    borderRadius: BorderRadius.circular(10),
-                                    color: Colors.greenAccent.withOpacity(0.2),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Text("Book donated"),
-                                      Text("30"),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                top: 50,
-                                left: 130,
-                                child: Container(
-                                  padding: EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.white),
-                                    borderRadius: BorderRadius.circular(10),
-                                    color: Colors.greenAccent.withOpacity(0.2),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Text("Book donated"),
-                                      Text("30"),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                top: 130,
-                                left: 70,
-                                child: Container(
-                                  padding: EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.white),
-                                    borderRadius: BorderRadius.circular(10),
-                                    color: Colors.greenAccent.withOpacity(0.2),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Text("Book donated"),
-                                      Text("30"),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )),
-                      ),
+                      // Container(
+                      //   padding: const EdgeInsets.all(16.0),
+                      //   margin: const EdgeInsets.all(16.0),
+                      //   decoration: BoxDecoration(
+                      //     //color: Colors.blueAccent.withOpacity(0.2),
+                      //     borderRadius: BorderRadius.circular(10),
+                      //   ),
+                      //   child: Center(
+                      //       child: Container(
+                      //     //color: Colors.blue,
+                      //     height: 250,
+                      //     width: 250,
+                      //     child: Stack(
+                      //       children: [
+                      //         Positioned(
+                      //           top: 50,
+                      //           child: Container(
+                      //             padding: EdgeInsets.all(8),
+                      //             decoration: BoxDecoration(
+                      //               border: Border.all(color: Colors.white),
+                      //               borderRadius: BorderRadius.circular(10),
+                      //               color: Colors.greenAccent.withOpacity(0.2),
+                      //             ),
+                      //             child: Column(
+                      //               children: [
+                      //                 Text("Book donated"),
+                      //                 Text("30"),
+                      //               ],
+                      //             ),
+                      //           ),
+                      //         ),
+                      //         Positioned(
+                      //           top: 50,
+                      //           left: 130,
+                      //           child: Container(
+                      //             padding: EdgeInsets.all(8),
+                      //             decoration: BoxDecoration(
+                      //               border: Border.all(color: Colors.white),
+                      //               borderRadius: BorderRadius.circular(10),
+                      //               color: Colors.greenAccent.withOpacity(0.2),
+                      //             ),
+                      //             child: Column(
+                      //               children: [
+                      //                 Text("Book donated"),
+                      //                 Text("30"),
+                      //               ],
+                      //             ),
+                      //           ),
+                      //         ),
+                      //         Positioned(
+                      //           top: 130,
+                      //           left: 70,
+                      //           child: Container(
+                      //             padding: EdgeInsets.all(8),
+                      //             decoration: BoxDecoration(
+                      //               border: Border.all(color: Colors.white),
+                      //               borderRadius: BorderRadius.circular(10),
+                      //               color: Colors.greenAccent.withOpacity(0.2),
+                      //             ),
+                      //             child: Column(
+                      //               children: [
+                      //                 Text("Book donated"),
+                      //                 Text("30"),
+                      //               ],
+                      //             ),
+                      //           ),
+                      //         ),
+                      //       ],
+                      //     ),
+                      //   )),
+                      // ),
                     ],
                   ),
                 ),
@@ -608,18 +610,18 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                       },
                       
                     ),
-                    // TextFormField(
-                    //   controller: flatcontroller,
-                    //   decoration: InputDecoration(labelText: "Enter your flatno"),
-                    //   validator:(value){
-                    //     if(value.toString()==null){
-                    //       return "flatno should not be empty";
+                    TextFormField(
+                      controller: flatcontroller,
+                      decoration: InputDecoration(labelText: "Enter your flatno"),
+                      validator:(value){
+                        if((value.toString()).isEmpty){
+                          return "flatno should not be empty";
                         
-                    //     }else{
-                    //       return null;
-                    //     }
-                    //   },
-                    // ),
+                        }else{
+                          return null;
+                        }
+                      },
+                    ),
                     TextFormField(
                       controller: emailcontroller,
                       decoration: InputDecoration(labelText: "Enter your email"),
@@ -647,41 +649,25 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                         }
                       },
                     ),
-                    // TextFormField(
-                    //   controller: phnocontroller,
-                    //   decoration: InputDecoration(labelText: "Enter your number"),
-                    //    validator:(value){
-                    //     if(value.toString()==null){
-                    //       return "number should not be null";
+                    TextFormField(
+                      controller: phnocontroller,
+                      decoration: InputDecoration(labelText: "Enter your number"),
+                       validator:(value){
+                        if((value.toString()).isEmpty){
+                          return "number should not be null";
                         
-                    //     }else if(value.toString().length<3){
-                    //       return "very small password";
-                    //     }
-                    //     else if(value.toString().length<10 || value.toString().length>10){
-                    //       return "invalid number";
-                    //     }
-                    //     else{
-                    //       return null;
-                    //     }
-                    //   },
-                    // ),
-                    // TextFormField(
-                    //   controller: adminidcontroller,
-                    //   decoration: InputDecoration(labelText: "Enter admin id"),
-                    //    validator:(value){
-                    //     if(value.toString()==null){
-                    //       return "password should not be null";
-                        
-                    //     }
-                    //     else if(value.toString().length>5){
-                    //       return "only 5 characters";
-
-                    //     }
-                    //     else{
-                    //       return null;
-                    //     }
-                    //   },
-                    // ),
+                        }else if(value.toString().length<3){
+                          return "very small password";
+                        }
+                        else if(value.toString().length<10 || value.toString().length>10){
+                          return "invalid number";
+                        }
+                        else{
+                          return null;
+                        }
+                      },
+                    ),
+                    
                      TextFormField(
                       controller: useridcontroller,
                       decoration: InputDecoration(labelText: "Enter user id"),
@@ -699,19 +685,19 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                         }
                       },
                     ),
-                    TextFormField(
-                      controller: communityidcontroller,
-                      decoration: InputDecoration(labelText: "enter your community id"),
-                       validator:(value){
-                        if(value.toString().isEmpty){
-                          return "type your community id";
+                    // TextFormField(
+                    //   controller: communityidcontroller,
+                    //   decoration: InputDecoration(labelText: "enter your community id"),
+                    //    validator:(value){
+                    //     if(value.toString().isEmpty){
+                    //       return "type your community id";
                         
-                        }
-                        else{
-                          return null;
-                        }
-                      },
-                    ),
+                    //     }
+                    //     else{
+                    //       return null;
+                    //     }
+                    //   },
+                    // ),
                    // SizedBox(height: 10),
                     
                   
@@ -724,9 +710,11 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                           password=passwordcontroller.text;
                           communityid=communityidcontroller.text;
                           userid=useridcontroller.text;
+                          flatno=flatcontroller.text;
+                          phno=phnocontroller.text;
                         });
                        
-                        adduser(name, email, password,communityid,userid);
+                        adduser(name, email, password,userid,flatno,phno);
                         Navigator.pop(context);
                         
                         

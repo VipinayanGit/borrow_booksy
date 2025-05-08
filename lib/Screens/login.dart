@@ -52,6 +52,8 @@ class _loginState extends State<login> {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setString('communityId', communityId);
         await prefs.setString('userId', userId);
+        await prefs.setString('flat',userDoc['flatno']);
+        
         await prefs.setBool('isadmin', adminclick);
         
 

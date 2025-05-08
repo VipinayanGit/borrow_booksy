@@ -45,23 +45,54 @@ class _RequestscreenState extends State<Requestscreen> {
       print("Error: User ID or Community ID is null.");
     }
   }
-  Stream<QuerySnapshot> getOwnerRequests() {
+  Stream<QuerySnapshot> getUserRequests() {
   return FirebaseFirestore.instance
     .collection('communities')
     .doc(Cid)
     .collection('requests')
-    .where('requested-To', isEqualTo: CustomUid)
-    .where('status', isEqualTo: 'pending')
+    .where(
+      Filter.or(
+        Filter('requested-To', isEqualTo: CustomUid), // You are owner
+        Filter('requesterName', isEqualTo: CustomUid)    // You are requester
+      )
+    )
     .orderBy('timestamp', descending: true)
     .snapshots();
 }
-void _showrequestdetails(String bookname,String requesterName){
+Future<void> acceptRequest({
+  required String communityId,
+  required String requestId,
+})async{
+   try {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // Update the request status to 'accepted'
+    await firestore
+        .collection('communities')
+        .doc(communityId)
+        .collection('requests')
+        .doc(requestId)
+        .update({
+          'status': 'accepted',
+        });
+
+    print('✅ Request accepted successfully.');
+  } catch (e) {
+    print('❌ Error accepting request: $e');
+  }
+}
+void _showrequestdetails(String bookname,String requesterName,String flatno,String requestId){
   showDialog(context: context,
    builder:(context) => AlertDialog(
     title:Text(bookname),
-    content: Text("${requesterName} from flat no has requested ${bookname} do u like to accept or reject "),
+    content: Text("${requesterName} from ${flatno} has requested ${bookname} do u like to accept or reject "),
    actions: [
-    TextButton(onPressed:(){},
+    TextButton(onPressed:(){
+      acceptRequest(
+        communityId: Cid!,
+        requestId: requestId
+        );
+    },
     child:Text("Accept"),),
     TextButton(onPressed: (){},
      child:Text("reject")),
@@ -79,7 +110,7 @@ void _showrequestdetails(String bookname,String requesterName){
          body:  Cid == null
           ? Center(child: CircularProgressIndicator())
           :StreamBuilder(
-            stream:getOwnerRequests() ,
+            stream:getUserRequests() ,
             builder:(context,snapshot){
               if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -93,10 +124,19 @@ void _showrequestdetails(String bookname,String requesterName){
             itemCount: requests.length,
             itemBuilder:(context,index){
               var request =requests[index];
+              var requestid=request.id;
+              String bookName = request['bookName'] ?? 'Unknown Book';
+              var status=request['status'];
+              String displayTitle = bookName; // default
+               if (status == 'accepted') {
+             displayTitle = "$bookName (Accepted)";
+               } else if (status == 'rejected') {
+                displayTitle = "$bookName (Rejected)";
+                 }
               return ListTile(
                 
-                title: Text(request['bookName'] ?? 'Unknown Book'),
-                onTap: ()=>_showrequestdetails(request['bookName'],request['requesterName']),
+                title: Text(displayTitle),
+                onTap: ()=>_showrequestdetails(request['bookName'],request['requesterName'],request['requester-flatno'],requestid),
               );
             } );
             }),
