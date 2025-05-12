@@ -1,0 +1,2 @@
+D:/projects/borrow_booksy/android/app/.cxx/RelWithDebInfo/59651h6v/armeabi-v7a/CMakeFiles/edit_cache.dir
+D:/projects/borrow_booksy/android/app/.cxx/RelWithDebInfo/59651h6v/armeabi-v7a/CMakeFiles/rebuild_cache.dir

@@ -59,87 +59,149 @@ class _RequestscreenState extends State<Requestscreen> {
     .orderBy('timestamp', descending: true)
     .snapshots();
 }
-Future<void> acceptRequest({
-  required String communityId,
-  required String requestId,
-})async{
-   try {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-    // Update the request status to 'accepted'
-    await firestore
-        .collection('communities')
-        .doc(communityId)
-        .collection('requests')
-        .doc(requestId)
-        .update({
-          'status': 'accepted',
-        });
-
-    print('✅ Request accepted successfully.');
-  } catch (e) {
-    print('❌ Error accepting request: $e');
-  }
-}
-void _showrequestdetails(String bookname,String requesterName,String flatno,String requestId){
-  showDialog(context: context,
-   builder:(context) => AlertDialog(
-    title:Text(bookname),
-    content: Text("${requesterName} from ${flatno} has requested ${bookname} do u like to accept or reject "),
-   actions: [
-    TextButton(onPressed:(){
-      acceptRequest(
-        communityId: Cid!,
-        requestId: requestId
-        );
-    },
-    child:Text("Accept"),),
-    TextButton(onPressed: (){},
-     child:Text("reject")),
-   ],
-   ),);
-}
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-         appBar: AppBar(
-          title: Text("requests"),
-         ),
-         body:  Cid == null
-          ? Center(child: CircularProgressIndicator())
-          :StreamBuilder(
-            stream:getUserRequests() ,
-            builder:(context,snapshot){
-              if (snapshot.connectionState == ConnectionState.waiting) {
+      appBar: AppBar(
+         title:Text("request screen"),
+
+      ),
+      body:(CustomUid == null || Cid == null)
+         ? Center(child: CircularProgressIndicator())
+        : StreamBuilder<QuerySnapshot>(
+        stream:getUserRequests(),
+        builder:(context,snapshot){
+          if(snapshot.connectionState==ConnectionState.waiting){
             return Center(child: CircularProgressIndicator());
           }
-
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text("No pending requests."));
+          if(!snapshot.hasData||snapshot.data!.docs.isEmpty){
+             return Center(child: Text("No requests found"));
           }
-          final requests=snapshot.data!.docs;
-          return ListView.builder(
-            itemCount: requests.length,
-            itemBuilder:(context,index){
-              var request =requests[index];
-              var requestid=request.id;
-              String bookName = request['bookName'] ?? 'Unknown Book';
-              var status=request['status'];
-              String displayTitle = bookName; // default
-               if (status == 'accepted') {
-             displayTitle = "$bookName (Accepted)";
-               } else if (status == 'rejected') {
-                displayTitle = "$bookName (Rejected)";
-                 }
+          print("Documents found: ${snapshot.data!.docs.length}");
+for (var doc in snapshot.data!.docs) {
+  print(doc.data());
+}
+
+          return ListView.builder
+          (
+            itemCount: snapshot.data!.docs.length,
+            itemBuilder: (context,index){
+              var doc=snapshot.data!.docs[index];
+              var data=doc.data() as Map<String,dynamic>;
+              String bookName = data['bookName'] ?? 'Unknown';
+              String status = data['status'] ?? 'pending';
+              String requester = data['requesterName'];
+              String owner = data['requested-To'];
+              bool isRequester = requester == CustomUid;
               return ListTile(
-                
-                title: Text(displayTitle),
-                onTap: ()=>_showrequestdetails(request['bookName'],request['requesterName'],request['requester-flatno'],requestid),
+                title: Text("$bookName - $status"),
+                onTap: () => showDialog(
+                  context: context,
+                  builder: (_) => isRequester
+                      ? requesterDialog(context, data, doc.id,Cid!)
+                      : ownerDialog(context, data, doc.id,Cid!),
+                ),
               );
-            } );
-            }),
+            });
+        }),
     );
   }
 }
+
+
+ Widget requesterDialog(BuildContext context, Map<String, dynamic> data, String docId,String Cid) {
+    return AlertDialog(
+      title: Text("Request Info"),
+      content: Text("You requested this book from ${data['ownername']}"),
+      actions: [
+        TextButton(
+          onPressed: () async {
+            await FirebaseFirestore.instance
+                .collection("communities")
+                .doc(Cid)
+                .collection("requests")
+                .doc(docId)
+                .delete();
+            Navigator.pop(context);
+          },
+          child: Text("Cancel Request", style: TextStyle(color: Colors.red)),
+        ),
+      ],
+    );
+  }
+
+
+Widget ownerDialog(BuildContext context, Map<String, dynamic> data, String docId,Cid) {
+    return AlertDialog(
+      title: Text("Request Received"),
+      content: Text("${data['requesterName']} from ${data['flatno']} has requested this book."),
+      actions: [
+        TextButton(
+          onPressed: () async {
+            await FirebaseFirestore.instance
+                .collection("communities")
+                .doc(Cid)
+                .collection("requests")
+                .doc(docId)
+                .update({"status": "accepted"});
+            Navigator.pop(context);
+          },
+          child: Text("Accept"),
+        ),
+        TextButton(
+          onPressed: () async {
+            await FirebaseFirestore.instance
+                .collection("communities")
+                .doc(Cid)
+                .collection("requests")
+                .doc(docId)
+                .delete();
+            Navigator.pop(context);
+          },
+          child: Text("Decline", style: TextStyle(color: Colors.red)),
+        ),
+      ],
+    );
+  }
+// Future<void> acceptRequest({
+//   required String communityId,
+//   required String requestId,
+// })async{
+//    try {
+//     FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+//     // Update the request status to 'accepted'
+//     await firestore
+//         .collection('communities')
+//         .doc(communityId)
+//         .collection('requests')
+//         .doc(requestId)
+//         .update({
+//           'status': 'accepted',
+//         });
+
+//     print('✅ Request accepted successfully.');
+//   } catch (e) {
+//     print('❌ Error accepting request: $e');
+//   }
+// }
+// void _showrequestdetails(String bookname,String requesterName,String flatno,String requestId){
+//   showDialog(context: context,
+//    builder:(context) => AlertDialog(
+//     title:Text(bookname),
+//     content: Text("${requesterName} from ${flatno} has requested ${bookname} do u like to accept or reject "),
+//    actions: [
+//     TextButton(onPressed:(){
+//       acceptRequest(
+//         communityId: Cid!,
+//         requestId: requestId
+//         );
+//     },
+//     child:Text("Accept"),),
+//     TextButton(onPressed: (){},
+//      child:Text("reject")),
+//    ],
+//    ),);
+// }
+
