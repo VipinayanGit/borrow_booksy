@@ -176,8 +176,9 @@ Future<void> _storebookindb( String bookname, String authorname, String genre) a
         "authorname": authorname,
         "genre": genre,
         "owner-id":CustomUid,
-        "timestamp": DateTime.now(),
-        "flatno":flat
+      //  "timestamp": DateTime.now(),
+        "flatno":flat,
+        "role":UserType
       }
     ]),
     "no_of_books": FieldValue.increment(1),
@@ -219,8 +220,9 @@ Future<void> _removeBookFromDB(Map<String, dynamic> book, int index) async {
           "authorname": book["authorname"], // Ensure Firestore uses this key
           "genre": book["genre"],
           "owner-id":book["owner-id"],
-          "timestamp":book["timestamp"],
-          "flatno":book['flatno']
+          //"timestamp":book["timestamp"],
+          "flatno":book['flatno'],
+          "role":book['role']
         }
       ]),
       "no_of_books": FieldValue.increment(-1),
@@ -858,6 +860,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
   String authorName = book["author"] ?? "Unknown Author";
   String genre = book["genre"] ?? "Unknown Genre";
   String owner=book["owner-id"]?? "Unknown owner";
+  String owner_role=book['role'];
 
   showDialog(
     context: context,
@@ -922,6 +925,17 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                       SizedBox(height: 8),
                       Text(
                         "Genre:${genre}",
+                        style:TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        softWrap: true,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        "Role:${owner_role}",
                         style:TextStyle(
                           fontSize: 12,
                           color: Colors.grey[600],

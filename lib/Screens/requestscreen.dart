@@ -13,17 +13,25 @@ class _RequestscreenState extends State<Requestscreen> {
   void initState(){
      super.initState();
      _loaduserData();
+     _refreshFirestore();
     
   }
   String?CustomUid;
   String?Cid;
   String? UserType;
+  bool  isUserDataLoaded=false;
+     void _refreshFirestore() async {
+  await FirebaseFirestore.instance.disableNetwork();
+  await FirebaseFirestore.instance.enableNetwork();
+}
      Future<void>_loaduserData()async{
     print("Loading user data from SharedPreferences...");
     SharedPreferences prefs=await SharedPreferences.getInstance();
     String? storeduserid=prefs.getString('userId');
     String? storedcommunityid=prefs.getString('communityId');
     bool isAdmin=prefs.getBool('isadmin')??false;
+    isUserDataLoaded=true;
+   
 
     print("Stored User ID: $storeduserid");
     print("Stored Community ID: $storedcommunityid");
@@ -45,20 +53,20 @@ class _RequestscreenState extends State<Requestscreen> {
       print("Error: User ID or Community ID is null.");
     }
   }
-  Stream<QuerySnapshot> getUserRequests() {
-  return FirebaseFirestore.instance
-    .collection('communities')
-    .doc(Cid)
-    .collection('requests')
-    .where(
-      Filter.or(
-        Filter('requested-To', isEqualTo: CustomUid), // You are owner
-        Filter('requesterName', isEqualTo: CustomUid)    // You are requester
-      )
-    )
-    .orderBy('timestamp', descending: true)
-    .snapshots();
-}
+//  Stream<QuerySnapshot> getUserRequests() {
+//   return FirebaseFirestore.instance
+//     .collection('communities')
+//     .doc(Cid)
+//     .collection('requests')
+//     .where(
+//       Filter.or(
+//         Filter('requested-To', isEqualTo: CustomUid), // You are owner
+//         Filter('requesterName', isEqualTo: CustomUid)    // You are requester
+//       )
+//     )
+//     .orderBy('timestamp', descending: true)
+//     .snapshots();
+// }
 
   @override
   Widget build(BuildContext context) {
@@ -67,21 +75,50 @@ class _RequestscreenState extends State<Requestscreen> {
          title:Text("request screen"),
 
       ),
-      body:(CustomUid == null || Cid == null)
-         ? Center(child: CircularProgressIndicator())
+      body:!isUserDataLoaded
+        ? Center(child: CircularProgressIndicator())
         : StreamBuilder<QuerySnapshot>(
-        stream:getUserRequests(),
-        builder:(context,snapshot){
-          if(snapshot.connectionState==ConnectionState.waiting){
-            return Center(child: CircularProgressIndicator());
-          }
-          if(!snapshot.hasData||snapshot.data!.docs.isEmpty){
-             return Center(child: Text("No requests found"));
-          }
-          print("Documents found: ${snapshot.data!.docs.length}");
+            stream: FirebaseFirestore.instance
+              .collection('communities')
+              .doc(Cid)
+              .collection('requests')
+              .where(
+                Filter.or(
+                  Filter('requested-To', isEqualTo: CustomUid),
+                  Filter('requesterName', isEqualTo: CustomUid),
+                ),
+              )
+              .orderBy('timestamp', descending: true)
+              .snapshots(),
+              builder: (context, snapshot) {
+              print("StreamBuilder triggered");
+
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              }
+
+            if(snapshot.hasError) {
+            print("Firestore error: ${snapshot.error}");
+            return Center(child: Text("Error loading data"));
+            }
+
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            print("No matching documents found");
+            return Center(child: Text("No requests found"));
+            }
+
+// Debug print the first document
 for (var doc in snapshot.data!.docs) {
-  print(doc.data());
+  print("Doc ID: ${doc.id}, Data: ${doc.data()}");
 }
+
+              final docs = snapshot.data!.docs;
+
+              print("Documents found: ${docs.length}");
+
+              if (docs.isEmpty) {
+                return Center(child: Text("No requests found"));
+              }
 
           return ListView.builder
           (
@@ -111,10 +148,77 @@ for (var doc in snapshot.data!.docs) {
 
 
  Widget requesterDialog(BuildContext context, Map<String, dynamic> data, String docId,String Cid) {
+  
+    String status=data['status'];
+
     return AlertDialog(
       title: Text("Request Info"),
-      content: Text("You requested this book from ${data['ownername']}"),
+      content: status == "accepted"
+        ? Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Your request for this book was accepted by ${data['ownername']}."),
+              SizedBox(height: 8),
+              Text("Owner's Flat No: ${data['ownerflatno']} "),
+              SizedBox(height: 8,),
+              Text("Owners mobile no:${data['ownermobno']}"),
+              SizedBox(height: 8),
+              Text("Mark as received once you collect the book."),
+            ],
+          )
+        :Text("You requested this book from ${data['ownername']}"),
       actions: [
+       if (status == "accepted") ...[
+        TextButton(
+          onPressed: () async {
+            await FirebaseFirestore.instance
+                .collection("communities")
+                .doc(Cid)
+                .collection("requests")
+                .doc(docId)
+                .delete();
+                
+     
+           String owner_role=data['owner_role'];
+           String ownerId=data['requested-To'];
+           dynamic bookId=data['bookId'];
+           String bookName=data['bookName'];
+           String book_author=data['book_author'];
+           String book_genre=data['book_genre'];
+
+           print(owner_role);
+           print(ownerId);
+           print(bookId);
+           print(bookName);
+           print(book_author);
+           print(book_genre);
+            //removing book from db    
+           await FirebaseFirestore.instance
+                  .collection('communities')
+                  .doc(Cid)
+                  .collection(owner_role)
+                  .doc(ownerId)
+                  .update({
+                  "books": FieldValue.arrayRemove([{
+                  "book-id": bookId,
+                  "name": bookName,
+                  "authorname":book_author,
+                  "genre": book_genre,
+                  "owner-id": ownerId,
+                   
+                  "flatno":data['ownerflatno'],
+                  "role":owner_role,
+    }]),
+    "no_of_books": FieldValue.increment(-1),
+  });
+  //   Navigator.pop(context);
+     print("book deleted successfully");
+           
+          },
+          child: Text("Book Received", style: TextStyle(color: Colors.green)),
+        ),
+      ] else ...[
         TextButton(
           onPressed: () async {
             await FirebaseFirestore.instance
@@ -128,6 +232,7 @@ for (var doc in snapshot.data!.docs) {
           child: Text("Cancel Request", style: TextStyle(color: Colors.red)),
         ),
       ],
+      ],
     );
   }
 
@@ -135,7 +240,7 @@ for (var doc in snapshot.data!.docs) {
 Widget ownerDialog(BuildContext context, Map<String, dynamic> data, String docId,Cid) {
     return AlertDialog(
       title: Text("Request Received"),
-      content: Text("${data['requesterName']} from ${data['flatno']} has requested this book."),
+      content: Text("${data['requesterName']} from ${data['requester-flatno']} has requested this book."),
       actions: [
         TextButton(
           onPressed: () async {

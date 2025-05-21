@@ -1,4 +1,5 @@
 import 'package:borrow_booksy/Screens/navscreen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'Screens/login.dart';
@@ -11,7 +12,14 @@ void main() async{
   await Firebase.initializeApp();
  // GoogleDriveService driveService=GoogleDriveService();
  // await driveService.init();
+  try {
+    await FirebaseFirestore.instance.clearPersistence();
+    print("Firestore cache cleared.");
+  } catch (e) {
+    print("Error clearing Firestore cache: $e");
+  }
  Widget startPage = await getStartScreen();
+ 
  bool isloggedin=await checkFirebaseAuthStatus();
 runApp(MyApp(startPage:startPage));
  

@@ -153,12 +153,15 @@ void filterBooks(String query) {
     required String bookId,
     required String bookName,
     required String? requesterName,
-    required String? flatno
+    required String? flatno,
+    required String owner_role,
+    required String book_genre, required String book_author
 
   })async{
     String?ownerflatno;
     String?ownermobno;
     String?ownername;
+   
 
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     final ownerdoc=await fetchOwnerDetails(ownerId);
@@ -202,13 +205,16 @@ void filterBooks(String query) {
           "requesterName": requesterName,
           "bookId": bookId,
           "bookName": bookName,
+          "book_genre":book_genre,
           "status": "pending",
           "timestamp": FieldValue.serverTimestamp(),
           "requested-To":ownerId,
           "requester-flatno":flatno,
           "ownername":ownername,
           "ownerflatno":ownerflatno,
-          "ownermobno":ownermobno
+          "ownermobno":ownermobno,
+          "owner_role":owner_role,
+          "book_author":book_author
          });
 
   ScaffoldMessenger.of(context).showSnackBar(
@@ -373,6 +379,9 @@ Widget build(BuildContext context) {
   String genre = book["genre"] ?? "Unknown Genre";
   String owner=book["owner-id"]?? "Unknown owner";
   String bookid=book["book-id"]??"unknown bookid";
+  String owner_role=book['role']??'unknown role';
+  String book_genre=book['genre']??'unknown genre';
+  String book_author=book['authorname']??"unknwon book author";
 
   showDialog(
     context: context,
@@ -455,6 +464,16 @@ Widget build(BuildContext context) {
                         overflow: TextOverflow.ellipsis,
                         maxLines: 2,
                       ),
+                      Text(
+                        "Owner_role:${owner_role}",
+                        style:TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        softWrap: true,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                      ),
                            Column(
                        // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
@@ -468,7 +487,10 @@ Widget build(BuildContext context) {
                             bookId: bookid,
                             bookName: bookName,
                             requesterName:CustomUid,
-                            flatno:flat
+                            flatno:flat,
+                            owner_role:owner_role,
+                            book_genre:book_genre,
+                            book_author:book_author
                             );
                             ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Request sent to book owner")),
