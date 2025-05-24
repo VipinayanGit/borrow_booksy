@@ -53,20 +53,27 @@ class _RequestscreenState extends State<Requestscreen> {
       print("Error: User ID or Community ID is null.");
     }
   }
-//  Stream<QuerySnapshot> getUserRequests() {
-//   return FirebaseFirestore.instance
-//     .collection('communities')
-//     .doc(Cid)
-//     .collection('requests')
-//     .where(
-//       Filter.or(
-//         Filter('requested-To', isEqualTo: CustomUid), // You are owner
-//         Filter('requesterName', isEqualTo: CustomUid)    // You are requester
-//       )
-//     )
-//     .orderBy('timestamp', descending: true)
-//     .snapshots();
-// }
+
+Future<void>remove_After_Receiving(String owner_role, String? ownerId, dynamic bookId, dynamic bookName, dynamic book_author, dynamic book_genre,Map<String, dynamic> data)async{
+  await FirebaseFirestore.instance
+                  .collection('communities')
+                  .doc(Cid)
+                  .collection(owner_role)
+                  .doc(ownerId)
+                  .update({
+                  "books": FieldValue.arrayRemove([{
+                  "book-id": bookId,
+                  "name": bookName,
+                  "authorname":book_author,
+                  "genre": book_genre,
+                  "owner-id": ownerId,
+                   
+                  "flatno":data['ownerflatno'],
+                  "role":owner_role,
+    }]),
+    "no_of_books": FieldValue.increment(-1),
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -144,9 +151,7 @@ for (var doc in snapshot.data!.docs) {
         }),
     );
   }
-}
-
-
+  
  Widget requesterDialog(BuildContext context, Map<String, dynamic> data, String docId,String Cid) {
   
     String status=data['status'];
@@ -170,53 +175,44 @@ for (var doc in snapshot.data!.docs) {
         :Text("You requested this book from ${data['ownername']}"),
       actions: [
        if (status == "accepted") ...[
-        TextButton(
-          onPressed: () async {
-            await FirebaseFirestore.instance
-                .collection("communities")
-                .doc(Cid)
-                .collection("requests")
-                .doc(docId)
-                .delete();
-                
-     
-           String owner_role=data['owner_role'];
-           String ownerId=data['requested-To'];
-           dynamic bookId=data['bookId'];
-           String bookName=data['bookName'];
-           String book_author=data['book_author'];
-           String book_genre=data['book_genre'];
-
-           print(owner_role);
-           print(ownerId);
-           print(bookId);
-           print(bookName);
-           print(book_author);
-           print(book_genre);
-            //removing book from db    
-           await FirebaseFirestore.instance
-                  .collection('communities')
-                  .doc(Cid)
-                  .collection(owner_role)
-                  .doc(ownerId)
-                  .update({
-                  "books": FieldValue.arrayRemove([{
-                  "book-id": bookId,
-                  "name": bookName,
-                  "authorname":book_author,
-                  "genre": book_genre,
-                  "owner-id": ownerId,
+        Builder(
+          builder: (context) {
+            return TextButton(
+              onPressed: () async {
+                await FirebaseFirestore.instance
+                    .collection("communities")
+                    .doc(Cid)
+                    .collection("requests")
+                    .doc(docId)
+                    .delete();
+                    
+                 
+               String owner_role=data['owner_role'];
+               String ownerId=data['requested-To'];
+               dynamic bookId=data['bookId'];
+               String bookName=data['bookName'];
+               String book_author=data['book_author'];
+               String book_genre=data['book_genre'];
+            
+               print(owner_role);
+               print(ownerId);
+               print(bookId);
+               print(bookName);
+               print(book_author);
+               print(book_genre);
+            
+                   await remove_After_Receiving(owner_role, ownerId, bookId, bookName, book_author, book_genre, data);
+               
+                   print("book deleted successfully");
                    
-                  "flatno":data['ownerflatno'],
-                  "role":owner_role,
-    }]),
-    "no_of_books": FieldValue.increment(-1),
-  });
-  //   Navigator.pop(context);
-     print("book deleted successfully");
-           
-          },
-          child: Text("Book Received", style: TextStyle(color: Colors.green)),
+              if (mounted) {
+                Navigator.pop(context);
+              }
+               
+              },
+              child: Text("Book Received", style: TextStyle(color: Colors.green)),
+            );
+          }
         ),
       ] else ...[
         TextButton(
@@ -235,9 +231,7 @@ for (var doc in snapshot.data!.docs) {
       ],
     );
   }
-
-
-Widget ownerDialog(BuildContext context, Map<String, dynamic> data, String docId,Cid) {
+  Widget ownerDialog(BuildContext context, Map<String, dynamic> data, String docId,Cid) {
     return AlertDialog(
       title: Text("Request Received"),
       content: Text("${data['requesterName']} from ${data['requester-flatno']} has requested this book."),
@@ -269,6 +263,13 @@ Widget ownerDialog(BuildContext context, Map<String, dynamic> data, String docId
       ],
     );
   }
+
+  
+}
+
+
+
+
 // Future<void> acceptRequest({
 //   required String communityId,
 //   required String requestId,
