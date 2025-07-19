@@ -69,6 +69,7 @@ class _ProfilescreenState extends State<Profilescreen> {
       print("Error: User ID or Community ID is null.");
     }
   }
+ 
   Future<void>_fetchuserdata()async{
     FirebaseFirestore firestore=FirebaseFirestore.instance;
      print("Fetching user data from Firestore...");
@@ -150,6 +151,8 @@ Future<void> _storebookindb( String bookname, String authorname, String genre) a
  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("book added successfully")));
    
 } 
+
+
 Future<void> _removeBookFromDB(Map<String, dynamic> book, int index) async {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 

@@ -20,11 +20,13 @@ class _RequestscreenState extends State<Requestscreen> {
   String?Cid;
   String? UserType;
   bool  isUserDataLoaded=false;
+    
      void _refreshFirestore() async {
   await FirebaseFirestore.instance.disableNetwork();
   await FirebaseFirestore.instance.enableNetwork();
 }
-     Future<void>_loaduserData()async{
+  
+  Future<void>_loaduserData()async{
     print("Loading user data from SharedPreferences...");
     SharedPreferences prefs=await SharedPreferences.getInstance();
     String? storeduserid=prefs.getString('userId');
@@ -231,7 +233,9 @@ for (var doc in snapshot.data!.docs) {
       ],
     );
   }
-  Widget ownerDialog(BuildContext context, Map<String, dynamic> data, String docId,Cid) {
+
+ 
+ Widget ownerDialog(BuildContext context, Map<String, dynamic> data, String docId,Cid) {
     return AlertDialog(
       title: Text("Request Received"),
       content: Text("${data['requesterName']} from ${data['requester-flatno']} has requested this book."),

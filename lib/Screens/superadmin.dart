@@ -33,7 +33,7 @@ class _SuperadminState extends State<Superadmin> {
   String name="",email="",password="",communityid="",adminid="",userid="";
   dynamic flatno="";String phno="";
 
-Future<void>adduser(String name,String email,String password,String communityid,String userid,String flatno,String phno)async{
+ Future<void>adduser(String name,String email,String password,String communityid,String userid,String flatno,String phno)async{
   DocumentSnapshot communitydoc=await FirebaseFirestore.instance.collection("communities").doc(communityid).get();
   if(!communitydoc.exists){
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("no community")));
@@ -84,7 +84,7 @@ try{
 
 
 
-  Future<void>addadmin(String name,String email,String password,String communityid,String adminid,String flatno,String phno)async{
+ Future<void>addadmin(String name,String email,String password,String communityid,String adminid,String flatno,String phno)async{
    
    DocumentSnapshot communitydoc=await FirebaseFirestore.instance.collection("communities").doc(communityid).get();
    if(!communitydoc.exists){
@@ -128,7 +128,9 @@ try{
   
   }
 
-  Future<void>addcommunity(String id,String name)async{
+ 
+ 
+ Future<void>addcommunity(String id,String name)async{
     await FirebaseFirestore.instance.collection("communities").doc(id).set(
       {
         "name":name
@@ -195,7 +197,7 @@ try{
     );
   }
 
-  void _manageusers(BuildContext context){
+ void _manageusers(BuildContext context){
     showDialog(context: context,
      builder:(context){
       return Dialog(
@@ -222,6 +224,7 @@ try{
       );
      });
   }
+ 
  
  void _addusers(BuildContext context){
     showDialog(
@@ -382,8 +385,7 @@ try{
   }
   
 
-
-  void _managecommunity(BuildContext context){
+ void _managecommunity(BuildContext context){
     showDialog(context: context,
      builder:(context){
       return Dialog(
@@ -410,7 +412,9 @@ try{
       );
      });
   }
-   void _addcommunity(BuildContext context){
+   
+   
+ void _addcommunity(BuildContext context){
     showDialog(context: context,
      builder:(context){
        return Dialog(
@@ -452,7 +456,9 @@ try{
        );
      });
   }
-  void _manageadmins(BuildContext context){
+  
+  
+ void _manageadmins(BuildContext context){
     showDialog(context: context,
      builder:(context){
       return Dialog(
@@ -481,9 +487,7 @@ try{
   }
 
  
-  
-  
-  void _addadmins(BuildContext context){
+ void _addadmins(BuildContext context){
     showDialog(
   context: context,
   builder: (context) {
@@ -641,7 +645,9 @@ try{
 
 
   }
-  void showDeleteCommunityDialog() {
+  
+ 
+ void showDeleteCommunityDialog() {
   TextEditingController communityIdController = TextEditingController();
   String? foundCommunityId;
 
@@ -739,7 +745,8 @@ try{
   );
 }
 
-  void showDeleteAdminDialog() {
+ 
+ void showDeleteAdminDialog() {
   TextEditingController communityIdController = TextEditingController();
   TextEditingController searchController = TextEditingController();
   String? adminId;
@@ -855,7 +862,9 @@ try{
     },
   );
 }
-  void showDeleteUserDialog() {
+  
+  
+ void showDeleteUserDialog() {
   TextEditingController communityIdController = TextEditingController();
   TextEditingController searchController = TextEditingController();
   String? userId;

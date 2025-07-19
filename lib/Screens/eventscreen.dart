@@ -18,7 +18,8 @@ class _EventscreenState extends State<Eventscreen> {
   String?CustomUid;
   String?Cid;
   String? UserType;
-     Future<void>_loaduserData()async{
+  
+  Future<void>_loaduserData()async{
     print("Loading user data from SharedPreferences...");
     SharedPreferences prefs=await SharedPreferences.getInstance();
     String? storeduserid=prefs.getString('userId');
@@ -45,6 +46,7 @@ class _EventscreenState extends State<Eventscreen> {
       print("Error: User ID or Community ID is null.");
     }
   }
+  
   Future<void> postMessage(String message) async {
     if (Cid == null || message.isEmpty) return;
     await FirebaseFirestore.instance
@@ -90,7 +92,8 @@ class _EventscreenState extends State<Eventscreen> {
       ),
     );
   }
- void _showMessageDetails(String message, String messageId) {
+  
+  void _showMessageDetails(String message, String messageId) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -109,7 +112,8 @@ class _EventscreenState extends State<Eventscreen> {
       ),
     );
   }
-    Future<void> _deleteMessage(String messageId) async {
+  
+  Future<void> _deleteMessage(String messageId) async {
     if (Cid == null) return;
     await FirebaseFirestore.instance
         .collection("communities")

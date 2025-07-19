@@ -65,6 +65,7 @@ void initState(){
       print("Error: User ID or Community ID is null.");
     }
   }
+
 Future<List<Map<String, dynamic>>> fetchBooksFromFirestore() async {
   if (Cid == null) {
     print("⚠️ Cid is null, returning empty book list.");
@@ -368,6 +369,8 @@ Widget build(BuildContext context) {
     ),
   );
 }
+ 
+ 
  void _showbookdetails(BuildContext context, Map<String, dynamic> book, int index) {
     if (book == null||book.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Book details not available.")));
