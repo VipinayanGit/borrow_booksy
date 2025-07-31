@@ -1,15 +1,19 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:borrow_booksy/Screens/login.dart';
 import 'package:borrow_booksy/Screens/requestscreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter/src/widgets/image.dart';
 
 class Adminprofile extends StatefulWidget {
-  //  final GoogleDriveService driveService;
- // Adminprofile({super.key, required this.driveService}) : super(); // Initialize driveService here
+ 
   Adminprofile({super.key});
 
 
@@ -19,6 +23,10 @@ class Adminprofile extends StatefulWidget {
 }
 
 class _ProfilescreenState extends State<Adminprofile> {
+
+   File? _selectedImage;
+final ImagePicker _picker = ImagePicker();
+
    @override
     void initState(){
     super.initState();
@@ -76,6 +84,9 @@ class _ProfilescreenState extends State<Adminprofile> {
       print("Error: User ID or Community ID is null.");
     }
   }
+  
+
+
   Future<void>_fetchuserdata()async{
     FirebaseFirestore firestore=FirebaseFirestore.instance;
      print("Fetching user data from Firestore...");
@@ -109,8 +120,7 @@ class _ProfilescreenState extends State<Adminprofile> {
   }
 
 
-  // final Function _manageusers;
-  // Adminprofile(this._manageusers);
+ 
   Future<void>adduser(String name,String email,String password,String userid,String flatno,String phno)async{
   DocumentSnapshot communitydoc=await FirebaseFirestore.instance.collection("communities").doc(Cid).get();
   if(!communitydoc.exists){
@@ -159,6 +169,9 @@ try{
 
  
 }
+
+
+
 Future<void> _storebookindb( String bookname, String authorname, String genre) async {
    
   FirebaseFirestore firestore=FirebaseFirestore.instance;
@@ -167,6 +180,11 @@ Future<void> _storebookindb( String bookname, String authorname, String genre) a
 
    var uuid=Uuid();
   String bookId = uuid.v4();
+
+   String? imageUrl;
+  if (_selectedImage != null) {
+    imageUrl = await uploadImageToCloudinary(_selectedImage!, bookId, Cid!);
+  }
 
   await userDocRef.update({
     "books": FieldValue.arrayUnion([
@@ -178,7 +196,8 @@ Future<void> _storebookindb( String bookname, String authorname, String genre) a
         "owner-id":CustomUid,
       //  "timestamp": DateTime.now(),
         "flatno":flat,
-        "role":UserType
+        "role":UserType,
+         "image_url":imageUrl??"",
       }
     ]),
     "no_of_books": FieldValue.increment(1),
@@ -188,6 +207,9 @@ Future<void> _storebookindb( String bookname, String authorname, String genre) a
  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("book added successfully")));
    
 } 
+
+
+
 Future<void> _removeBookFromDB(Map<String, dynamic> book, int index) async {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
@@ -246,6 +268,9 @@ Future<void> _removeBookFromDB(Map<String, dynamic> book, int index) async {
     );
   }
 }
+
+
+
 Stream<List<Map<String, dynamic>>> getBooksStream() {
   return FirebaseFirestore.instance
       .collection("communities")
@@ -262,6 +287,71 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
       });
 }
 
+
+void _showImageSourceDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: Text("Select Image Source"),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+            _pickImage(ImageSource.camera);
+          },
+          child: Text("Camera"),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+            _pickImage(ImageSource.gallery);
+          },
+          child: Text("Gallery"),
+        ),
+      ],
+    ),
+  );
+}
+
+
+Future<void> _pickImage(ImageSource source) async {
+  final XFile? image = await _picker.pickImage(source: source, imageQuality: 70);
+  if (image != null) {
+      Navigator.pop(context); // 👈 Close the dialog first
+    final File fileImage = File(image.path);
+ 
+    setState(() {
+      _selectedImage = fileImage;
+    });
+  } else {
+    print("❌ No image selected.");
+  }
+}
+
+
+Future<String?> uploadImageToCloudinary(File imageFile, String bookId, String communityFolderName) async {
+  const cloudName = 'di24ilgw4';
+  const uploadPreset = 'borrowbooksy';
+
+  final url = Uri.parse("https://api.cloudinary.com/v1_1/$cloudName/image/upload");
+
+  final request = http.MultipartRequest('POST', url)
+    ..fields['upload_preset'] = uploadPreset
+    ..fields['folder'] = 'communities/$communityFolderName'
+    ..fields['public_id'] = 'communities/$communityFolderName/$bookId'
+    ..files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+
+  final response = await request.send();
+
+  if (response.statusCode == 200) {
+    final resStr = await response.stream.bytesToString();
+    final jsonResponse = json.decode(resStr);
+    return jsonResponse['secure_url'];
+  } else {
+    print("❌ Cloudinary Upload Failed: ${response.statusCode}");
+    return null;
+  }
+}
 
   
   @override
@@ -416,6 +506,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                String bookName = book["name"] ?? "Unknown Book";
                String authorName = book["authorname"] ?? "Unknown Author";
                String genre = book["genre"] ?? "Unknown Genre";
+               String imageurl=book["image_url"]??"";
 
               
 
@@ -438,7 +529,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                           width: 90,
                            decoration: BoxDecoration(
                               image: DecorationImage(
-                                image:AssetImage("assets/bookpic.jpg") ,
+                                image:NetworkImage(imageurl) ,
                                 
                               ),
                              
@@ -552,6 +643,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
   }
 
 
+ 
  void _manageusers(BuildContext context){
     showDialog(context: context,
      builder:(context){
@@ -579,7 +671,10 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
       );
      });
   }
-  void _addusers(BuildContext context){
+ 
+ 
+ 
+ void _addusers(BuildContext context){
     showDialog(
   context: context,
   builder: (context) {
@@ -738,7 +833,9 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
 
   }
  
-  void _addbookdialogue(BuildContext context) {
+ 
+ 
+void _addbookdialogue(BuildContext context) {
     final _bookcontroller = TextEditingController();
     final _authorcontroller = TextEditingController();
   
@@ -753,15 +850,26 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
             content: SingleChildScrollView(
               child: Column(
                 children: [
-                  Container(
-                    child: ElevatedButton.icon(
-                      onPressed: (){
-                        //pickAndUploadImage(context);
-                      },
-                      label: Text("Upload book image"),
-                      icon: Icon(Icons.upload_file),
-                    ),
-                  ),
+                  
+                  _selectedImage != null
+    ? Column(
+        children: [
+        
+          Image.file(
+            _selectedImage!,
+            height: 200,
+            fit: BoxFit.cover,
+          ),
+        ],
+      )
+    : Text("No image selected"),
+
+                SizedBox(height: 20),
+                 ElevatedButton(
+      onPressed: () => _showImageSourceDialog(context),
+      child: Text("Capture Image"),
+    ),
+    
                   SizedBox(height: 10),
                   TextField(
                     controller: _bookcontroller,
@@ -857,10 +965,12 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
   }
 
   String bookName = book["name"] ?? "Unknown Book";
-  String authorName = book["author"] ?? "Unknown Author";
+  String authorName = book["authorname"] ?? "Unknown Author";
   String genre = book["genre"] ?? "Unknown Genre";
   String owner=book["owner-id"]?? "Unknown owner";
-  String owner_role=book['role'];
+  String owner_role=book['role']??"unknown role";
+  String imageurl=book["image_url"]??"";
+
 
   showDialog(
     context: context,
@@ -879,7 +989,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                   child: Container(
                     decoration: BoxDecoration(
                               image: DecorationImage(
-                                image:AssetImage("assets/bookpic.jpg") ,
+                                image:NetworkImage(imageurl) ,
                                 
                               ),
                              
@@ -947,15 +1057,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                            Column(
                        // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            child: Text(
-                              "Request",
-                              style: TextStyle(color: Colors.blue),
-                            ),
-                          ),
+                        
                           TextButton(
                            onPressed: ()async {
                               // Remove book from list
@@ -980,6 +1082,8 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
     },
   );
 }
+
+
 
 void showDeleteUserDialog() {
   TextEditingController communityIdController = TextEditingController();

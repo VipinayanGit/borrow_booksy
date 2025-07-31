@@ -56,6 +56,7 @@ class _RequestscreenState extends State<Requestscreen> {
     }
   }
 
+
 Future<void>remove_After_Receiving(String owner_role, String? ownerId, dynamic bookId, dynamic bookName, dynamic book_author, dynamic book_genre,Map<String, dynamic> data)async{
   await FirebaseFirestore.instance
                   .collection('communities')
@@ -154,6 +155,8 @@ for (var doc in snapshot.data!.docs) {
     );
   }
   
+
+
  Widget requesterDialog(BuildContext context, Map<String, dynamic> data, String docId,String Cid) {
   
     String status=data['status'];
@@ -233,6 +236,7 @@ for (var doc in snapshot.data!.docs) {
       ],
     );
   }
+
 
  
  Widget ownerDialog(BuildContext context, Map<String, dynamic> data, String docId,Cid) {

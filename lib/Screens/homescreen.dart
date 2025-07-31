@@ -15,8 +15,7 @@ void initState(){
     super.initState();
   
     _loaduserData();
-  //  fetchBooksFromFirestore();
-  // futureBooks = fetchBooksFromFirestore();
+  
    
   }
  String? selectedGenre;
@@ -65,6 +64,8 @@ void initState(){
       print("Error: User ID or Community ID is null.");
     }
   }
+
+
 
 Future<List<Map<String, dynamic>>> fetchBooksFromFirestore() async {
   if (Cid == null) {
@@ -129,6 +130,8 @@ Future<List<Map<String, dynamic>>> fetchBooksFromFirestore() async {
   return books;
 }
 
+
+
 void filterBooks(String query) {
   setState(() {
     if (query.isEmpty) {
@@ -148,7 +151,7 @@ void filterBooks(String query) {
 
 
 
-  Future<void>SendBookRequest({
+Future<void>SendBookRequest({
     
     required String ownerId,
     required String bookId,
@@ -231,6 +234,8 @@ void filterBooks(String query) {
 
   }
   
+
+
 Future<Map<String, dynamic>?> fetchOwnerDetails(String ownerid) async{
 
 
@@ -262,7 +267,7 @@ Future<Map<String, dynamic>?> fetchOwnerDetails(String ownerid) async{
 
 
 }
-
+ 
   
   @override
 Widget build(BuildContext context) {
@@ -335,7 +340,7 @@ Widget build(BuildContext context) {
                           width: 90,
                          decoration: BoxDecoration(
                               image: DecorationImage(
-                                image:AssetImage("assets/bookpic.jpg") ,
+                                image:NetworkImage(book["image_url"]??"") ,
                                 
                               ),
                              
@@ -371,6 +376,7 @@ Widget build(BuildContext context) {
 }
  
  
+ 
  void _showbookdetails(BuildContext context, Map<String, dynamic> book, int index) {
     if (book == null||book.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Book details not available.")));
@@ -385,6 +391,7 @@ Widget build(BuildContext context) {
   String owner_role=book['role']??'unknown role';
   String book_genre=book['genre']??'unknown genre';
   String book_author=book['authorname']??"unknwon book author";
+  String imageurl=book['image_url']??"unknown image";
 
   showDialog(
     context: context,
@@ -403,7 +410,7 @@ Widget build(BuildContext context) {
                   child: Container(
                     decoration: BoxDecoration(
                               image: DecorationImage(
-                                image:AssetImage("assets/bookpic.jpg") ,
+                                image:NetworkImage(imageurl) ,
                                 
                               ),
                              

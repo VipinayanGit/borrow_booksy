@@ -19,6 +19,8 @@ class _EventscreenState extends State<Eventscreen> {
   String?Cid;
   String? UserType;
   
+
+
   Future<void>_loaduserData()async{
     print("Loading user data from SharedPreferences...");
     SharedPreferences prefs=await SharedPreferences.getInstance();
@@ -47,6 +49,8 @@ class _EventscreenState extends State<Eventscreen> {
     }
   }
   
+
+
   Future<void> postMessage(String message) async {
     if (Cid == null || message.isEmpty) return;
     await FirebaseFirestore.instance
@@ -58,6 +62,7 @@ class _EventscreenState extends State<Eventscreen> {
       "timestamp": FieldValue.serverTimestamp(), // For sorting
     });
   }
+
 
   // 🔹 Show Message Input Dialog
   void _showMessageDialog() {
@@ -93,6 +98,8 @@ class _EventscreenState extends State<Eventscreen> {
     );
   }
   
+
+
   void _showMessageDetails(String message, String messageId) {
     showDialog(
       context: context,
@@ -112,6 +119,8 @@ class _EventscreenState extends State<Eventscreen> {
       ),
     );
   }
+  
+
   
   Future<void> _deleteMessage(String messageId) async {
     if (Cid == null) return;

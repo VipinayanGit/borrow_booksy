@@ -10,8 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
- // GoogleDriveService driveService=GoogleDriveService();
- // await driveService.init();
+
   try {
     await FirebaseFirestore.instance.clearPersistence();
     print("Firestore cache cleared.");
@@ -25,14 +24,14 @@ runApp(MyApp(startPage:startPage));
  
 
 
-  //driveService: driveService
+ 
   }
 
   Future<Widget> getStartScreen() async {
   User? user = FirebaseAuth.instance.currentUser;
   
   if (user == null) {
-    return login(); // Redirect to login if no user is logged in
+    return login(); 
   }
 
   // Check if the user is an admin or a normal user

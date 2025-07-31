@@ -5,12 +5,11 @@ import 'package:flutter/material.dart';
 import 'profilescreen.dart';
 
 class Navscreen extends StatefulWidget {
-  // final String role;
-  //  final GoogleDriveService driveService;
+ 
  
  final String role;
  Navscreen({required this.role,Key?key}):super(key:key );
-  //Navscreen({required this.role,required this.driveService, Key? key}): super(key: key);
+  
  
   
 
@@ -30,14 +29,14 @@ class _NavscreenState extends State<Navscreen> {
     _adminScreens = [
        Homescreen(),
        Eventscreen(),
-       Adminprofile()//driveService:widget.driveService,
+       Adminprofile()
     ];
 
     // User Screens
     _userScreens = [
       Homescreen(),
       Eventscreen(),
-      Profilescreen(),//driveService: widget.driveService,
+      Profilescreen(),
     ];
   }
   
