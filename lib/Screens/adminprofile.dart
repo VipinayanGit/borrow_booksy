@@ -210,6 +210,23 @@ Future<void> _storebookindb( String bookname, String authorname, String genre) a
 
 
 
+String extractPublicId(String imageUrl) {
+  final uri = Uri.parse(imageUrl);
+  final parts = uri.pathSegments;
+
+  final uploadIndex = parts.indexOf('upload');
+  if (uploadIndex != -1 && parts.length > uploadIndex + 1) {
+    final segments = parts.sublist(uploadIndex + 2); // skip 'upload' and version
+    final joined = segments.join('/');
+    return joined.replaceAll('.jpg', ''); // or '.png' if needed
+  }
+  return '';
+}
+
+
+
+
+
 Future<void> _removeBookFromDB(Map<String, dynamic> book, int index) async {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
@@ -244,7 +261,10 @@ Future<void> _removeBookFromDB(Map<String, dynamic> book, int index) async {
           "owner-id":book["owner-id"],
           //"timestamp":book["timestamp"],
           "flatno":book['flatno'],
-          "role":book['role']
+          "role":book['role'],
+          "image_url":book["image_url"]
+
+          
         }
       ]),
       "no_of_books": FieldValue.increment(-1),
@@ -268,6 +288,44 @@ Future<void> _removeBookFromDB(Map<String, dynamic> book, int index) async {
     );
   }
 }
+
+
+Future<void> deleteImageFromCloudinary(String publicId) async {
+  const cloudName = 'di24ilgw4';
+  const apiKey = '283866122381729';
+  const apiSecret = 'cVnq7zpNpHxV16NYiXAXzoFUSzQ';
+
+  final auth = 'Basic ' + base64Encode(utf8.encode('$apiKey:$apiSecret'));
+
+  final url = Uri.parse(
+    'https://api.cloudinary.com/v1_1/$cloudName/resources/image/upload?public_ids[]=$publicId',
+  );
+
+  final response = await http.delete(
+    url,
+    headers: {'Authorization': auth},
+  );
+
+  print("📩 Cloudinary Delete Response: ${response.statusCode} - ${response.body}");
+
+  if (response.statusCode == 200) {
+    print('✅ Image deleted from Cloudinary');
+  } else {
+    print('❌ Failed to delete image. Status: ${response.statusCode}');
+  }
+}
+
+Future<void> deleteImageUsingUrl(String imageUrl) async {
+  String publicId = extractPublicId(imageUrl);
+  if (publicId.isNotEmpty) {
+    await deleteImageFromCloudinary(publicId);
+  } else {
+    print('❌ Failed to extract public_id from URL');
+  }
+}
+
+
+
 
 
 
@@ -1061,6 +1119,7 @@ void _addbookdialogue(BuildContext context) {
                           TextButton(
                            onPressed: ()async {
                               // Remove book from list
+                             await deleteImageUsingUrl(imageurl);
                              await _removeBookFromDB(book, index);
                              Navigator.pop(context);
                             },
