@@ -20,6 +20,7 @@ void main() async{
  Widget startPage = await getStartScreen();
  
  bool isloggedin=await checkFirebaseAuthStatus();
+ 
 runApp(MyApp(startPage:startPage));
  
 

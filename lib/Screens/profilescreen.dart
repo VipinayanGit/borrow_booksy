@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:borrow_booksy/Screens/adding_books.dart';
 import 'package:borrow_booksy/Screens/login.dart';
 import 'package:borrow_booksy/Screens/requestscreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -8,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
+
 
 
 
@@ -25,6 +26,7 @@ class Profilescreen extends StatefulWidget {
 class _ProfilescreenState extends State<Profilescreen> {
 
    File? _selectedImage;
+    String response_bkname="";
 final ImagePicker _picker = ImagePicker();
 
   @override
@@ -112,110 +114,6 @@ final ImagePicker _picker = ImagePicker();
  
 
 
- void _showImageSourceDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: Text("Select Image Source"),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context);
-            _pickImage(ImageSource.camera);
-          },
-          child: Text("Camera"),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context);
-            _pickImage(ImageSource.gallery);
-          },
-          child: Text("Gallery"),
-        ),
-      ],
-    ),
-  );
-}
-
-
-
-Future<void> _pickImage(ImageSource source) async {
-  final XFile? image = await _picker.pickImage(source: source, imageQuality: 70);
-  if (image != null) {
-      Navigator.pop(context); // 👈 Close the dialog first
-    final File fileImage = File(image.path);
- 
-    setState(() {
-      _selectedImage = fileImage;
-    });
-  } else {
-    print("❌ No image selected.");
-  }
-}
-
-
-
-Future<String?> uploadImageToCloudinary(File imageFile, String bookId, String communityFolderName) async {
-  const cloudName = 'di24ilgw4';
-  const uploadPreset = 'borrowbooksy';
-
-  final url = Uri.parse("https://api.cloudinary.com/v1_1/$cloudName/image/upload");
-
-  final request = http.MultipartRequest('POST', url)
-    ..fields['upload_preset'] = uploadPreset
-    ..fields['folder'] = 'communities/$communityFolderName'
-    ..fields['public_id'] = 'communities/$communityFolderName/$bookId'
-    ..files.add(await http.MultipartFile.fromPath('file', imageFile.path));
-
-  final response = await request.send();
-
-  if (response.statusCode == 200) {
-    final resStr = await response.stream.bytesToString();
-    final jsonResponse = json.decode(resStr);
-    return jsonResponse['secure_url'];
-  } else {
-    print("❌ Cloudinary Upload Failed: ${response.statusCode}");
-    return null;
-  }
-}
-
-
-
-Future<void> _storebookindb( String bookname, String authorname, String genre) async {
-   
-  FirebaseFirestore firestore=FirebaseFirestore.instance;
-  DocumentReference userDocRef = firestore.collection("communities").doc(Cid).collection(UserType!).doc(CustomUid);
-   
-
-   var uuid=Uuid();
-  String bookId = uuid.v4();
-
-   String? imageUrl;
-  if (_selectedImage != null) {
-    imageUrl = await uploadImageToCloudinary(_selectedImage!, bookId, Cid!);
-  }
-
-  await userDocRef.update({
-    "books": FieldValue.arrayUnion([
-      { 
-        "book-id":bookId,
-        "name": bookname,
-        "authorname": authorname,
-        "genre": genre,
-        "owner-id":CustomUid,
-      //  "timestamp": DateTime.now(),
-        "flatno":flat,
-        "role":UserType,
-        "image_url":imageUrl??"",
-      }
-    ]),
-    "no_of_books": FieldValue.increment(1),
-  }, 
-  );
-
- ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("book added successfully")));
-   
-} 
 
 
 String extractPublicId(String imageUrl) {
@@ -359,7 +257,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 1,
       child: Scaffold(
         key: _ScaffoldKey,
         appBar: AppBar(
@@ -397,18 +295,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                     ],
                   ),
                 ),
-                // ListTile(
-                //   title: Text("Contact"),
-                //   onTap: () {},
-                // ),
-                // ListTile(
-                //   title: Text("Support"),
-                //   onTap: () {},
-                // ),
-                // ListTile(
-                //   title: Text("help"),
-                //   onTap: () {},
-                // ),
+                
                 ListTile(
                   title: Text("Log out"),
                   onTap: ()async {
@@ -449,7 +336,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                                     height: 30,
                                     width: 150,
                                     child: ElevatedButton(
-                                      onPressed: () => _addbookdialogue(context),
+                                      onPressed: () =>Navigator.push(context, MaterialPageRoute(builder:(context)=>AddBooks())),         //_addbookdialogue(context),
                                       child: Text(
                                         "Add Books",
                                         style: TextStyle(
@@ -567,80 +454,6 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                          }
                       ),
 
-
-                     
-                      // "History" tab: Single container
-                      // Container(
-                      //   padding: const EdgeInsets.all(16.0),
-                      //   margin: const EdgeInsets.all(16.0),
-                      //   decoration: BoxDecoration(
-                      //     //color: Colors.blueAccent.withOpacity(0.2),
-                      //     borderRadius: BorderRadius.circular(10),
-                      //   ),
-                      //   child: Center(
-                      //       child: Container(
-                      //     //color: Colors.blue,
-                      //     height: 250,
-                      //     width: 250,
-                      //     child: Stack(
-                      //       children: [
-                      //         Positioned(
-                      //           top: 50,
-                      //           child: Container(
-                      //             padding: EdgeInsets.all(8),
-                      //             decoration: BoxDecoration(
-                      //               border: Border.all(color: Colors.white),
-                      //               borderRadius: BorderRadius.circular(10),
-                      //               color: Colors.greenAccent.withOpacity(0.2),
-                      //             ),
-                      //             child: Column(
-                      //               children: [
-                      //                 Text("Book donated"),
-                      //                 Text("30"),
-                      //               ],
-                      //             ),
-                      //           ),
-                      //         ),
-                      //         Positioned(
-                      //           top: 50,
-                      //           left: 130,
-                      //           child: Container(
-                      //             padding: EdgeInsets.all(8),
-                      //             decoration: BoxDecoration(
-                      //               border: Border.all(color: Colors.white),
-                      //               borderRadius: BorderRadius.circular(10),
-                      //               color: Colors.greenAccent.withOpacity(0.2),
-                      //             ),
-                      //             child: Column(
-                      //               children: [
-                      //                 Text("Book donated"),
-                      //                 Text("30"),
-                      //               ],
-                      //             ),
-                      //           ),
-                      //         ),
-                      //         Positioned(
-                      //           top: 130,
-                      //           left: 70,
-                      //           child: Container(
-                      //             padding: EdgeInsets.all(8),
-                      //             decoration: BoxDecoration(
-                      //               border: Border.all(color: Colors.white),
-                      //               borderRadius: BorderRadius.circular(10),
-                      //               color: Colors.greenAccent.withOpacity(0.2),
-                      //             ),
-                      //             child: Column(
-                      //               children: [
-                      //                 Text("Book donated"),
-                      //                 Text("30"),
-                      //               ],
-                      //             ),
-                      //           ),
-                      //         ),
-                      //       ],
-                      //     ),
-                      //   )),
-                      // ),
                     ],
                   ),
                 ),
@@ -653,148 +466,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
   }
 
 
-//Add book dialogue box
-  void _addbookdialogue(BuildContext context) {
-    final _bookcontroller = TextEditingController();
-    final _authorcontroller = TextEditingController(); 
-    
-    List<String> genres = ["Fiction", "Non-Fiction", "Mystery", "Fantasy", "Science Fiction", "Biography", "History", "Poetry"];
-    selectedGenre=null;
 
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text("Add book"),
-            content: SingleChildScrollView(
-              child: Column(
-                children: [
-
-
-                 
-                
-                  _selectedImage != null
-    ? Column(
-        children: [
-        
-          Image.file(
-            _selectedImage!,
-            height: 200,
-            fit: BoxFit.cover,
-          ),
-        ],
-      )
-    : Text("No image selected"),
-
-                SizedBox(height: 20),
-                 ElevatedButton(
-      onPressed: () => _showImageSourceDialog(context),
-      child: Text("Capture Image"),
-    ),
-    
-                  SizedBox(height: 10),
-                  TextField(
-                    controller: _bookcontroller,
-                    decoration: InputDecoration(
-                      hintText: "Book name",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  TextField(
-                    controller: _authorcontroller,
-                    decoration: InputDecoration(
-                      hintText: "Author name",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  DropdownButtonFormField<String>(
-                    value:selectedGenre,
-                    decoration: InputDecoration(
-                      hintText: "select genre",
-                      border: OutlineInputBorder(),
-                    ),
-                    items:genres.map((String genre){
-                      return DropdownMenuItem<String>(
-                        value: genre,                        
-                        child: Text(genre),
-                        );
-                    }).toList(),
-                    onChanged:(String? newvalue){
-                      setState(() {
-                          selectedGenre=newvalue;
-                      });
-                    
-                    }),
-                    SizedBox(height: 10),
-                   Center(child: Text("after selecting the image the dialogue box will close ,kindly click add books again")),
-
-                ],
-              ),
-            ),
-            actions: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: Text("cancel"),
-                  ),
-                  TextButton(
-                    onPressed: ()async {
-                      String Bookname = _bookcontroller.text;
-                      String authorname = _authorcontroller.text;
-
-
-                      if (_selectedImage == null) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please capture or pick an image")));
-    return;
-  }
-
-
-
-
-                      if (Bookname.isNotEmpty && authorname.isNotEmpty) {
-
-                         await _storebookindb(Bookname, authorname, selectedGenre!);
-
-                            Map<String,String>newbook={
-                              "name": Bookname,
-                            "author": authorname,
-                            "genre":selectedGenre!,
-                            };
-
-
-                         
-
-                        setState(() {
-                          books.add(newbook);
-
-                        });
-                       Navigator.pop(context);
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text("please fill all the fields"),
-                        ));
-                      }
-                      _bookcontroller.clear();
-                      _authorcontroller.clear();
-                      setState(() {
-                        _selectedImage=null;
-                        selectedGenre=null;
-                      });
-                    },
-                    child: Text("add"),
-                  ),
-                ],
-              ),
-            ],
-          );
-        });
-  }
 
 //book detail dialogue box
  void _showbookdetails(BuildContext context, Map<String, dynamic> book, int index) {
