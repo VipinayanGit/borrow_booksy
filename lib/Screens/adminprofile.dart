@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:borrow_booksy/Screens/adding_books.dart';
 import 'package:borrow_booksy/Screens/login.dart';
 import 'package:borrow_booksy/Screens/requestscreen.dart';
+import 'package:borrow_booksy/Screens/transaction_history.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -228,7 +229,9 @@ Future<void> _removeBookFromDB(Map<String, dynamic> book, int index) async {
           //"timestamp":book["timestamp"],
           "flatno":book['flatno'],
           "role":book['role'],
-          "image_url":book["image_url"]
+          "image_url":book["image_url"],
+          "duration_value":book["duration_value"],
+          "duration_unit":book["duration_unit"]
 
           
         }
@@ -367,6 +370,12 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => login()));//driveService: widget.driveService,
                   },
                 ),
+                ListTile(
+                  title: Text("transaction history"),
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => TransactionHistory()));//driveService: widget.driveService,
+                  },
+                ),
               ],
             ),
           ),
@@ -460,7 +469,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                         return GridView.builder(
             padding: const EdgeInsets.all(8.0),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              childAspectRatio: 3 / 4,
+              childAspectRatio: 1.3/ 2,
               crossAxisCount: 2,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
@@ -490,8 +499,8 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          height: 100,
-                          width: 90,
+                          height: 150,
+                          width: 120,
                            decoration: BoxDecoration(
                               image: DecorationImage(
                                 image:NetworkImage(imageurl) ,
@@ -521,81 +530,6 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
 
                          }
                       ),
-
-
-                     
-                      // "History" tab: Single container
-                      // Container(
-                      //   padding: const EdgeInsets.all(16.0),
-                      //   margin: const EdgeInsets.all(16.0),
-                      //   decoration: BoxDecoration(
-                      //     //color: Colors.blueAccent.withOpacity(0.2),
-                      //     borderRadius: BorderRadius.circular(10),
-                      //   ),
-                      //   child: Center(
-                      //       child: Container(
-                      //     //color: Colors.blue,
-                      //     height: 250,
-                      //     width: 250,
-                      //     child: Stack(
-                      //       children: [
-                      //         Positioned(
-                      //           top: 50,
-                      //           child: Container(
-                      //             padding: EdgeInsets.all(8),
-                      //             decoration: BoxDecoration(
-                      //               border: Border.all(color: Colors.white),
-                      //               borderRadius: BorderRadius.circular(10),
-                      //               color: Colors.greenAccent.withOpacity(0.2),
-                      //             ),
-                      //             child: Column(
-                      //               children: [
-                      //                 Text("Book donated"),
-                      //                 Text("30"),
-                      //               ],
-                      //             ),
-                      //           ),
-                      //         ),
-                      //         Positioned(
-                      //           top: 50,
-                      //           left: 130,
-                      //           child: Container(
-                      //             padding: EdgeInsets.all(8),
-                      //             decoration: BoxDecoration(
-                      //               border: Border.all(color: Colors.white),
-                      //               borderRadius: BorderRadius.circular(10),
-                      //               color: Colors.greenAccent.withOpacity(0.2),
-                      //             ),
-                      //             child: Column(
-                      //               children: [
-                      //                 Text("Book donated"),
-                      //                 Text("30"),
-                      //               ],
-                      //             ),
-                      //           ),
-                      //         ),
-                      //         Positioned(
-                      //           top: 130,
-                      //           left: 70,
-                      //           child: Container(
-                      //             padding: EdgeInsets.all(8),
-                      //             decoration: BoxDecoration(
-                      //               border: Border.all(color: Colors.white),
-                      //               borderRadius: BorderRadius.circular(10),
-                      //               color: Colors.greenAccent.withOpacity(0.2),
-                      //             ),
-                      //             child: Column(
-                      //               children: [
-                      //                 Text("Book donated"),
-                      //                 Text("30"),
-                      //               ],
-                      //             ),
-                      //           ),
-                      //         ),
-                      //       ],
-                      //     ),
-                      //   )),
-                      // ),
                     ],
                   ),
                 ),
@@ -814,6 +748,8 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
   String owner=book["owner-id"]?? "Unknown owner";
   String owner_role=book['role']??"unknown role";
   String imageurl=book["image_url"]??"";
+  int duration_value=int.parse(book["duration_value"]??0) ;
+  String duration_unit=book["duration_unit"]??"";
 
 
   showDialog(
@@ -896,8 +832,40 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                         ),
                         softWrap: true,
                         overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                       SizedBox(height: 8),
+                      Text(
+                        "owner:${owner}",
+                        style:TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        softWrap: true,
+                        overflow: TextOverflow.ellipsis,
                         maxLines: 2,
                       ),
+                      Text(
+                        "owner:${owner}",
+                        style:TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        softWrap: true,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      Text(
+                        "duration:$duration_value $duration_unit",
+                        style:TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        softWrap: true,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      
                            Column(
                        // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [

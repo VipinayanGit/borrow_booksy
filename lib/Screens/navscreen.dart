@@ -61,7 +61,7 @@ class _NavscreenState extends State<Navscreen> {
         items:isAdmin
         ?[
           BottomNavigationBarItem(
-                  icon: Icon(Icons.dashboard),
+                  icon: Icon(Icons.settings_accessibility_outlined),
                   label: "admin",
                 ),
                 BottomNavigationBarItem(

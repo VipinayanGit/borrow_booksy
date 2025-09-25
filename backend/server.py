@@ -11,6 +11,7 @@ app=Flask(__name__)
 
 @app.route("/process_image",methods=['POST'])
 def process_image():
+    print("📥 Request received!") 
     try:
         if 'image' not in request.files:
             return jsonify({"error" :"no image provided"})
@@ -20,7 +21,7 @@ def process_image():
         img=Image.open(io.BytesIO(image_file.read()))
 
         print("image received from flutter")
-        si="Give me the title  of the book only,if there is no title just return no title"
+        si="Give me the title  of the book only,if there is no title just return no title,if the image doesn't look like a book front page just return not a book"
 
         response=model.generate_content([si,img])
         print("✅ Gemini processed the image")

@@ -28,6 +28,8 @@ class _AddBooksState extends State<AddBooks> {
    String BookName="";
    bool _isLoading=false;
    TextEditingController _authornamecontroller=TextEditingController();
+    List<String> d_units=["Hours","days","months","years"];
+    String? final_du=null;
     List<String> genres = ["Fiction", "Non-Fiction", "Mystery", "Fantasy", "Science Fiction", "Biography", "History", "Poetry"];
     String? selectedGenre=null;
     String?CustomUid;
@@ -35,8 +37,11 @@ class _AddBooksState extends State<AddBooks> {
   String? UserType;
   String?flat;
   Map<String, dynamic>? userData;
+  TextEditingController _dvController=TextEditingController();
+   String d_value="";
+   
  
-  final List<String> forbiddenWords = ["badword","block","fuck","bitch","ass","fuck"];
+  final List<String> forbiddenWords = ["badword","block","fuck","bitch","ass","fuck","no title","not a book"];
  
   
   Future<void>_loaduserData()async{
@@ -151,7 +156,11 @@ class _AddBooksState extends State<AddBooks> {
   });
 
   try{
-    var uri = Uri.parse("http://192.168.0.6:5000/process_image");
+   // print("📤 Sending request to: $uri");
+
+//print("📥 Response status: ${res.statusCode}");
+//print("📥 Response body: ${res.body}");
+    var uri = Uri.parse("http://131.131.70.3:5000/process_image");
     var request = http.MultipartRequest('POST', uri)
         ..files.add(await http.MultipartFile.fromPath(
           'image',
@@ -180,7 +189,7 @@ class _AddBooksState extends State<AddBooks> {
     }
   }
 
-Future<void> _storebookindb( String bookname, String authorname, String genre) async {
+Future<void> _storebookindb( String bookname, String authorname, String genre,String final_du, d_value) async {
    
   FirebaseFirestore firestore=FirebaseFirestore.instance;
   DocumentReference userDocRef = firestore.collection("communities").doc(Cid).collection(UserType!).doc(CustomUid);
@@ -208,6 +217,8 @@ Future<void> _storebookindb( String bookname, String authorname, String genre) a
         "flatno":flat,
         "role":UserType,
         "image_url":imageUrl??"",
+        "duration_value":d_value,
+         "duration_unit":final_du,
       }
     ]),
     "no_of_books": FieldValue.increment(1),
@@ -322,10 +333,49 @@ Future<String?> uploadImageToCloudinary(
                       }).toList(),
                       onChanged:(String? newvalue){
                         setState(() {
+                             
                             selectedGenre=newvalue;
                         });
                       
                       }),
+                      SizedBox(height: 20),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _dvController,
+                              decoration: InputDecoration(
+                                hintText: "no of",
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                            value:final_du,
+                            decoration: InputDecoration(
+                              hintText: "select duration",
+                              border: OutlineInputBorder(),
+                            ),
+                            items:d_units.map((String du){
+                              return DropdownMenuItem<String>(
+                                value: du,                        
+                                child: Text(du),
+                                );
+                            }).toList(),
+                            onChanged:(String? newdu){
+                              setState(() {
+                                d_value= _dvController.text;
+                                  final_du=newdu;
+                              });
+                            
+                            }),
+                          ),
+                        ],
+                      ),
+                     
                       SizedBox(height: 20),
                       ElevatedButton(onPressed: ()async{
                        String authorname=_authornamecontroller.text;
@@ -336,6 +386,10 @@ Future<String?> uploadImageToCloudinary(
                         }
                         if(BookName=="no title"){
                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("there is no title for book")));
+                            return ;
+                        }
+                        if(BookName=="not a book"){
+                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("It is not a book")));
                             return ;
                         }
                         if(authorname.isEmpty&&selectedGenre==null && BookName.isEmpty){
@@ -352,25 +406,27 @@ Future<String?> uploadImageToCloudinary(
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text("Upload failed ❌: Response contains forbidden word '$word'")),
                               );
-                              return; // Stop upload
+                             return; // Stop upload
                             }
                           }
+                    //    d_value=_dvController.text;
                         if(BookName.isNotEmpty && authorname.isNotEmpty){
-                           await _storebookindb(BookName,authorname,selectedGenre!);
+                           await _storebookindb(BookName,authorname,selectedGenre!,final_du!,d_value);
                           }
-                        
                         setState(() {
                           _imagefile=null;
                           selectedGenre=null;
                           BookName="";
                           authorname="";
+                          d_value="";
+                          final_du=null;
+                          _dvController.clear();
+                          _authornamecontroller.clear();
                           });
-          
                       },
                       child:Text("upload book")),
                       SizedBox(height: 10),
                       if(_isLoading)CircularProgressIndicator(),
-                    
                    ],
                  ),
                 

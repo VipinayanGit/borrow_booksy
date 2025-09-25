@@ -57,7 +57,66 @@ class _RequestscreenState extends State<Requestscreen> {
   }
 
 
-Future<void>remove_After_Receiving(String owner_role, String? ownerId, dynamic bookId, dynamic bookName, dynamic book_author, dynamic book_genre,Map<String, dynamic> data)async{
+Future<void>create_loan(
+            String owner_role,
+            String? ownerId,
+            dynamic bookId,
+            dynamic bookName,
+            dynamic book_author,
+            dynamic book_genre,
+            Map<String, dynamic> data,
+            var owner_mobile,
+            dynamic owner_flat,
+            duration_value,
+            duration_unit)
+            async{
+            String requester_Name=data["requesterName"];
+            dynamic requester_flatno=data["requester-flatno"];
+            String duration_value=data["duration_value"]; 
+            String duration_unit=data["duration_unit"];
+            
+
+           final   firestore=FirebaseFirestore.instance;
+         final loanref=firestore.collection("communities").doc(Cid).collection("loans");
+     try{
+            await loanref.add({
+                "ownerId":ownerId,
+                "bookId":bookId,
+                "owner_flat":owner_flat,
+                "owner_mob":owner_mobile,
+                "owner_role":owner_role,
+                "requester_name":requester_Name,
+                "requester_flatno":requester_flatno,
+                "duration_value":duration_value,
+                "duration_unit":duration_unit,
+                "timestamp":DateTime.now()
+              }); 
+     print("loan created");
+     ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("loan created")),
+    );
+     }catch(e){
+               print("Error creating loan: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Error creating loan")),
+    );
+
+     }   
+}
+
+
+Future<void>remove_After_Receiving(String owner_role, String? ownerId, dynamic bookId, dynamic bookName, dynamic book_author, dynamic book_genre,Map<String, dynamic> data,dynamic owner_flat,var owner_mobile,duration_value,duration_unit)async{
+ 
+ await create_loan( owner_role, ownerId, bookId, bookName,  book_author, book_genre, data, owner_flat,owner_mobile,duration_value,duration_unit);
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
   await FirebaseFirestore.instance
                   .collection('communities')
                   .doc(Cid)
@@ -70,9 +129,10 @@ Future<void>remove_After_Receiving(String owner_role, String? ownerId, dynamic b
                   "authorname":book_author,
                   "genre": book_genre,
                   "owner-id": ownerId,
-                   
                   "flatno":data['ownerflatno'],
                   "role":owner_role,
+                  "duration_unit":duration_unit,
+                  "duration_value":duration_value
     }]),
     "no_of_books": FieldValue.increment(-1),
   });
@@ -198,6 +258,11 @@ for (var doc in snapshot.data!.docs) {
                String bookName=data['bookName'];
                String book_author=data['book_author'];
                String book_genre=data['book_genre'];
+               String owner_flat=data['ownerflatno'];
+               String owner_mobile=data['ownerflatno'];
+               String duration_unit=data["duration_unit"];
+               String duration_value=data["duration_value"] ;
+
             
                print(owner_role);
                print(ownerId);
@@ -205,8 +270,10 @@ for (var doc in snapshot.data!.docs) {
                print(bookName);
                print(book_author);
                print(book_genre);
-            
-                   await remove_After_Receiving(owner_role, ownerId, bookId, bookName, book_author, book_genre, data);
+               print(duration_value);
+               print(duration_unit);
+                   //await create_loan(owner_role, ownerId, bookId, bookName, book_author, book_genre, data,owner_flat,owner_mobile);
+                   await remove_After_Receiving(owner_role, ownerId, bookId, bookName, book_author, book_genre, data,owner_flat,owner_mobile,duration_value,duration_unit);
                
                    print("book deleted successfully");
                    

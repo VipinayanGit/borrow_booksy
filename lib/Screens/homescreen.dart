@@ -159,7 +159,7 @@ Future<void>SendBookRequest({
     required String? requesterName,
     required String? flatno,
     required String owner_role,
-    required String book_genre, required String book_author
+    required String book_genre, required String book_author,required duration_value,required duration_unit
 
   })async{
     String?ownerflatno;
@@ -218,7 +218,10 @@ Future<void>SendBookRequest({
           "ownerflatno":ownerflatno,
           "ownermobno":ownermobno,
           "owner_role":owner_role,
-          "book_author":book_author
+          "book_author":book_author,
+          "duration_value":duration_value,
+          "duration_unit":duration_unit
+
          });
 
   ScaffoldMessenger.of(context).showSnackBar(
@@ -314,7 +317,7 @@ Widget build(BuildContext context) {
                   padding: EdgeInsets.all(7),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    childAspectRatio: 3 / 4,
+                    childAspectRatio:  1.4/ 2,
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
                   ),
@@ -326,6 +329,7 @@ Widget build(BuildContext context) {
                  _showbookdetails(context, book, index);
                 },
                 child: Container(
+                  padding:EdgeInsets.all(5),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(5),
                     border: Border.all(color: Colors.white),
@@ -336,17 +340,19 @@ Widget build(BuildContext context) {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          height: 100,
-                          width: 90,
+                          padding: EdgeInsets.only(top: 10),
+                          height: 150,
+                          width: 120,
                          decoration: BoxDecoration(
                               image: DecorationImage(
                                 image:NetworkImage(book["image_url"]??"") ,
+                                fit: BoxFit.fill
                                 
                               ),
                              
                             ),  // Placeholder for book image
                         ),
-                        SizedBox(height: 10),
+                        SizedBox(height: 20),
                         Text(
                           book["name"] ?? "Unknown Book",
                           textAlign: TextAlign.center,
@@ -392,6 +398,8 @@ Widget build(BuildContext context) {
   String book_genre=book['genre']??'unknown genre';
   String book_author=book['authorname']??"unknwon book author";
   String imageurl=book['image_url']??"unknown image";
+  String duration_value=book["duration_value"].toString() ;
+  String duration_unit=book["duration_unit"];
 
   showDialog(
     context: context,
@@ -448,7 +456,7 @@ Widget build(BuildContext context) {
                           color: Colors.grey[600],
                           
                         ),
-                        
+                
                         softWrap: true,
                         overflow: TextOverflow.ellipsis,
                         maxLines: 3,
@@ -484,6 +492,18 @@ Widget build(BuildContext context) {
                         overflow: TextOverflow.ellipsis,
                         maxLines: 2,
                       ),
+                      
+                      Text(
+                         "Duration:$duration_value" " $duration_unit",
+                        style:TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        softWrap: true,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                     
+                      ),
                            Column(
                        // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
@@ -500,7 +520,9 @@ Widget build(BuildContext context) {
                             flatno:flat,
                             owner_role:owner_role,
                             book_genre:book_genre,
-                            book_author:book_author
+                            book_author:book_author,
+                            duration_value:duration_value,
+                            duration_unit:duration_unit
                             );
                             ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Request sent to book owner")),

@@ -168,7 +168,9 @@ Future<void> _removeBookFromDB(Map<String, dynamic> book, int index) async {
          // "timestamp":book["timestamp"],
           "flatno":book['flatno'],
           "role":book['role'],
-          "image_url":book["image_url"]
+          "image_url":book["image_url"],
+          "duration_value":book["duration_value"],
+          "duration_unit":book["duration_unit"]
         }
       ]),
       "no_of_books": FieldValue.increment(-1),
@@ -378,7 +380,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                         return GridView.builder(
             padding: const EdgeInsets.all(8.0),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              childAspectRatio: 3 / 4,
+              childAspectRatio: 1.3 / 2,
               crossAxisCount: 2,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
@@ -413,11 +415,12 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                         children: [
                           Container(
                             padding: EdgeInsets.all(8),
-                            height: 100,
-                            width: 90,
+                            height: 150,
+                            width: 120,
                             decoration: BoxDecoration(
                               image: DecorationImage(
                                 image:NetworkImage(imageurl) ,
+                                
                                 
                               ),
                              
