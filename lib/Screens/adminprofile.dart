@@ -230,7 +230,7 @@ Future<void> _removeBookFromDB(Map<String, dynamic> book, int index) async {
           "flatno":book['flatno'],
           "role":book['role'],
           "image_url":book["image_url"],
-          "duration_value":book["duration_value"],
+          "duration_value":book["duration_value"]??"",
           "duration_unit":book["duration_unit"]
 
           
@@ -481,11 +481,21 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                String authorName = book["authorname"] ?? "Unknown Author";
                String genre = book["genre"] ?? "Unknown Genre";
                String imageurl=book["image_url"]??"";
+               String o_role=book['role']??"";
+               String o=book['owner']??"";
 
               
 
               return GestureDetector(
                 onTap: () {
+                  print('Book Details:\n'
+      'bookName: $bookName (${bookName.runtimeType})\n'
+      'authorName: $authorName (${authorName.runtimeType})\n'
+      'genre: $genre (${genre.runtimeType})\n'
+      'owner_role: $o_role (${o_role.runtimeType})\n'
+      'owner: $o (${o.runtimeType})\n'
+      'imageurl: $imageurl (${imageurl.runtimeType})');
+
                   _showbookdetails(context, book, index);
                 },
                 child: Container(
@@ -742,16 +752,24 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
     return;
   }
 
-  String bookName = book["name"] ?? "Unknown Book";
-  String authorName = book["authorname"] ?? "Unknown Author";
-  String genre = book["genre"] ?? "Unknown Genre";
-  String owner=book["owner-id"]?? "Unknown owner";
-  String owner_role=book['role']??"unknown role";
-  String imageurl=book["image_url"]??"";
-  int duration_value=int.parse(book["duration_value"]??0) ;
-  String duration_unit=book["duration_unit"]??"";
+  String bookName = book["name"]?.toString() ?? "Unknown Book";
+  String authorName = book["authorname"]?.toString()  ?? "Unknown Author";
+  String genre = book["genre"]?.toString()  ?? "Unknown Genre";
+  String owner=book["owner-id"]?.toString() ?? "Unknown owner";
+  String owner_role=book['role']?.toString() ??"unknown role";
+  String imageurl=book["image_url"]?.toString() ??"";
+  String duration_value=book["duration_value"]?.toString() ??"" ;
+  String duration_unit=book["duration_unit"]?.toString() ??"";
+  print(bookName.runtimeType);
+  print(authorName.runtimeType);
+  print(genre.runtimeType);
+  print(owner.runtimeType);
+  print(imageurl.runtimeType);
+  print(duration_value.runtimeType);
+  print(duration_unit.runtimeType);
+  
 
-
+try{
   showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -835,16 +853,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                         maxLines: 1,
                       ),
                        SizedBox(height: 8),
-                      Text(
-                        "owner:${owner}",
-                        style:TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                        softWrap: true,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 2,
-                      ),
+                     
                       Text(
                         "owner:${owner}",
                         style:TextStyle(
@@ -856,7 +865,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                         maxLines: 1,
                       ),
                       Text(
-                        "duration:$duration_value $duration_unit",
+                        "duration:${duration_value} ${duration_unit}",
                         style:TextStyle(
                           fontSize: 12,
                           color: Colors.grey[600],
@@ -894,6 +903,10 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
       );
     },
   );
+}catch (e, stackTrace) {
+  print('Error in showDialog: $e');
+  print(stackTrace);
+}
 }
 
 

@@ -160,7 +160,7 @@ class _AddBooksState extends State<AddBooks> {
 
 //print("📥 Response status: ${res.statusCode}");
 //print("📥 Response body: ${res.body}");
-    var uri = Uri.parse("http://131.131.70.3:5000/process_image");
+    var uri = Uri.parse("http://192.168.137.38:5000/process_image");
     var request = http.MultipartRequest('POST', uri)
         ..files.add(await http.MultipartFile.fromPath(
           'image',

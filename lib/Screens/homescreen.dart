@@ -24,6 +24,7 @@ void initState(){
   String?Cid;
   String? UserType;
   String? flat;
+  String? phno;
   Map<String, dynamic>? userData;
   List<Map<String, dynamic>> allBooks = [];
   List<Map<String, dynamic>> filteredBooks = []; 
@@ -39,11 +40,9 @@ void initState(){
     String? storedcommunityid=prefs.getString('communityId');
     bool isAdmin=prefs.getBool('isadmin')??false;
     String?storedflatno=prefs.getString('flat');
+    String?mobile=prefs.getString('phno');
 
-    print("Stored User ID: $storeduserid");
-    print("Stored Community ID: $storedcommunityid");
-    print("Is Admin: $isAdmin");
-    print("flat no: $flat");
+
     
 
     if(storeduserid!=null&&storedcommunityid!=null){
@@ -53,9 +52,16 @@ void initState(){
         flat=storedflatno;
         UserType=isAdmin?'admins':'users';
         futureBooks=fetchBooksFromFirestore();
+        phno=mobile;
+         
 
       });
+          print("Stored User ID: $storeduserid");
+    print("Stored Community ID: $storedcommunityid");
+    print("Is Admin: $isAdmin");
+    print("flat no: $flat");
       print("Cid updated: $Cid");
+      print("my mobile $phno");
       
       
      
@@ -159,8 +165,11 @@ Future<void>SendBookRequest({
     required String? requesterName,
     required String? flatno,
     required String owner_role,
-    required String book_genre, required String book_author,required duration_value,required duration_unit
-
+    required String book_genre,
+    required String book_author,
+    required duration_value,
+    required duration_unit,
+    required phno
   })async{
     String?ownerflatno;
     String?ownermobno;
@@ -220,7 +229,8 @@ Future<void>SendBookRequest({
           "owner_role":owner_role,
           "book_author":book_author,
           "duration_value":duration_value,
-          "duration_unit":duration_unit
+          "duration_unit":duration_unit,
+          "r_phno":phno
 
          });
 
@@ -522,7 +532,8 @@ Widget build(BuildContext context) {
                             book_genre:book_genre,
                             book_author:book_author,
                             duration_value:duration_value,
-                            duration_unit:duration_unit
+                            duration_unit:duration_unit,
+                            phno:phno
                             );
                             ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Request sent to book owner")),

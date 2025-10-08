@@ -55,6 +55,7 @@ class _loginState extends State<login> {
         await prefs.setString('flat',userDoc['flatno']);
         
         await prefs.setBool('isadmin', adminclick);
+        await prefs.setString('phno',userDoc['phno']);
         
 
         // Navigate to respective screen

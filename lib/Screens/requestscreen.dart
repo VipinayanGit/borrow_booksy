@@ -68,7 +68,9 @@ Future<void>create_loan(
             var owner_mobile,
             dynamic owner_flat,
             duration_value,
-            duration_unit)
+            duration_unit,
+            r_phno
+            )
             async{
             String requester_Name=data["requesterName"];
             dynamic requester_flatno=data["requester-flatno"];
@@ -80,6 +82,7 @@ Future<void>create_loan(
          final loanref=firestore.collection("communities").doc(Cid).collection("loans");
      try{
             await loanref.add({
+                "bookName":bookName,
                 "ownerId":ownerId,
                 "bookId":bookId,
                 "owner_flat":owner_flat,
@@ -87,9 +90,11 @@ Future<void>create_loan(
                 "owner_role":owner_role,
                 "requester_name":requester_Name,
                 "requester_flatno":requester_flatno,
+                "r_phno":r_phno,
                 "duration_value":duration_value,
                 "duration_unit":duration_unit,
-                "timestamp":DateTime.now()
+                "timestamp":DateTime.now(),
+                
               }); 
      print("loan created");
      ScaffoldMessenger.of(context).showSnackBar(
@@ -105,9 +110,9 @@ Future<void>create_loan(
 }
 
 
-Future<void>remove_After_Receiving(String owner_role, String? ownerId, dynamic bookId, dynamic bookName, dynamic book_author, dynamic book_genre,Map<String, dynamic> data,dynamic owner_flat,var owner_mobile,duration_value,duration_unit)async{
+Future<void>remove_After_Receiving(String owner_role, String? ownerId, dynamic bookId, dynamic bookName, dynamic book_author, dynamic book_genre,Map<String, dynamic> data,dynamic owner_flat,var owner_mobile,duration_value,duration_unit,r_phno)async{
  
- await create_loan( owner_role, ownerId, bookId, bookName,  book_author, book_genre, data, owner_flat,owner_mobile,duration_value,duration_unit);
+ await create_loan( owner_role, ownerId, bookId, bookName,  book_author, book_genre, data, owner_flat,owner_mobile,duration_value,duration_unit,r_phno);
  
  
  
@@ -132,7 +137,8 @@ Future<void>remove_After_Receiving(String owner_role, String? ownerId, dynamic b
                   "flatno":data['ownerflatno'],
                   "role":owner_role,
                   "duration_unit":duration_unit,
-                  "duration_value":duration_value
+                  "duration_value":duration_value,
+                 
     }]),
     "no_of_books": FieldValue.increment(-1),
   });
@@ -200,12 +206,13 @@ for (var doc in snapshot.data!.docs) {
               String status = data['status'] ?? 'pending';
               String requester = data['requesterName'];
               String owner = data['requested-To'];
+              String r_mobile=data['r_phno'];
               bool isRequester = requester == CustomUid;
               return ListTile(
                 title: Text("$bookName - $status"),
                 onTap: () => showDialog(
                   context: context,
-                  builder: (_) => isRequester
+                  builder: (dialogContext) => isRequester
                       ? requesterDialog(context, data, doc.id,Cid!)
                       : ownerDialog(context, data, doc.id,Cid!),
                 ),
@@ -244,6 +251,7 @@ for (var doc in snapshot.data!.docs) {
           builder: (context) {
             return TextButton(
               onPressed: () async {
+                try{
                 await FirebaseFirestore.instance
                     .collection("communities")
                     .doc(Cid)
@@ -259,9 +267,10 @@ for (var doc in snapshot.data!.docs) {
                String book_author=data['book_author'];
                String book_genre=data['book_genre'];
                String owner_flat=data['ownerflatno'];
-               String owner_mobile=data['ownerflatno'];
+               String owner_mobile=data['ownermobno'];
                String duration_unit=data["duration_unit"];
                String duration_value=data["duration_value"] ;
+               String r_phno=data["r_phno"];
 
             
                print(owner_role);
@@ -272,13 +281,16 @@ for (var doc in snapshot.data!.docs) {
                print(book_genre);
                print(duration_value);
                print(duration_unit);
+               print(r_phno);
                    //await create_loan(owner_role, ownerId, bookId, bookName, book_author, book_genre, data,owner_flat,owner_mobile);
-                   await remove_After_Receiving(owner_role, ownerId, bookId, bookName, book_author, book_genre, data,owner_flat,owner_mobile,duration_value,duration_unit);
+                   await remove_After_Receiving(owner_role, ownerId, bookId, bookName, book_author, book_genre, data,owner_flat,owner_mobile,duration_value,duration_unit,r_phno);
                
                    print("book deleted successfully");
                    
-              if (mounted) {
+              if (Navigator.canPop(context)) {
                 Navigator.pop(context);
+              }}catch(e){
+                print("Error requesting book: $e");   
               }
                
               },
@@ -309,7 +321,7 @@ for (var doc in snapshot.data!.docs) {
  Widget ownerDialog(BuildContext context, Map<String, dynamic> data, String docId,Cid) {
     return AlertDialog(
       title: Text("Request Received"),
-      content: Text("${data['requesterName']} from ${data['requester-flatno']} has requested this book."),
+      content: Text("${data['requesterName']} from ${data['requester-flatno']} has requested ${data['bookName']} and his phno is ${data['r_phno']}"),
       actions: [
         TextButton(
           onPressed: () async {

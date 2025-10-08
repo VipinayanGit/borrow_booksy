@@ -43,6 +43,8 @@ final ImagePicker _picker = ImagePicker();
   String?CustomUid;
   String?Cid;
   String? UserType;
+  String? mobile;
+  String?phno;
   String?flat;
   Map<String, dynamic>? userData;
  
@@ -55,6 +57,7 @@ final ImagePicker _picker = ImagePicker();
     String? storedcommunityid=prefs.getString('communityId');
     String? storedflatno=prefs.getString('flat');
     bool isAdmin=prefs.getBool('isadmin')??false;
+    mobile=prefs.getString('phno')??"null";
 
     print("Stored User ID: $storeduserid");
     print("Stored Community ID: $storedcommunityid");
@@ -67,6 +70,7 @@ final ImagePicker _picker = ImagePicker();
         Cid=storedcommunityid;
         flat=storedflatno;
         UserType=isAdmin?'admins':'users';
+        phno=mobile;
 
       });
 

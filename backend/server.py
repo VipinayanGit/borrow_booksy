@@ -3,9 +3,19 @@ from PIL import Image
 from flask import Flask, request, jsonify
 import json
 import io
+from dotenv import load_dotenv
+import os 
 
-genai.configure(api_key="AIzaSyAg1l0vat_ccrZ0qijHgciONbVQs507o2c ")
-model=genai.GenerativeModel("gemini-1.5-flash")
+load_dotenv()
+api_key = os.getenv("API_KEY")
+
+if not api_key:
+    raise ValueError("GENAI_API_KEY not found in .env file")
+
+genai.configure(api_key=api_key)
+print("API key loaded:", api_key is not None)
+
+model=genai.GenerativeModel("gemini-2.5-flash")
 
 app=Flask(__name__)
 
@@ -41,7 +51,7 @@ def process_image():
         return jsonify({"error": str(e)}), 500
 
 if __name__ =='__main__':
-    app.run(host='0.0.0.0',port=5000,debug=True)
+    app.run(host='0.0.0.0',port=int(os.environ.get("PORT", 5000)),debug=True)
 
 
 

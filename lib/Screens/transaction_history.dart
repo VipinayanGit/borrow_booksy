@@ -100,6 +100,9 @@ class _TransactionHistoryState extends State<TransactionHistory> {
                     String owner = data['ownerId']??"none";
                     String duration_value=data["duration_value"]??0 ;
                     String duration_unit=data["duration_unit"]??"";
+                    String r_flat=data["requester-flatno"]??"null";
+                    String r_phno=data["r_phno"]??"null";
+                    
                     print(data);
                     for (var doc in snapshot.data!.docs) {
                     print("Doc ID: ${doc.id}, Data: ${doc.data()}");
@@ -116,7 +119,9 @@ class _TransactionHistoryState extends State<TransactionHistory> {
                   return ListTile(
                     
                   title: Text("$owner to $requester for $duration_value $duration_unit "),
-                  onTap: (){},
+                  onTap: (){
+                     show_t_Details(context,data);
+                  },
                 );
                 }
                       
@@ -127,6 +132,157 @@ class _TransactionHistoryState extends State<TransactionHistory> {
       ),
     );
   }
-  void showDetails
+  void show_t_Details(Buildcontext,Map<String,dynamic>data){
+    if(data.isEmpty){
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Book details not available.")));
+    return;
+  }
+   String requester = data['requester_name']??"none";
+                    String owner = data['ownerId']??"none";
+                    String duration_value=data["duration_value"]??0 ;
+                    String duration_unit=data["duration_unit"]??"";
+                    String r_flat=data["requester_flatno"]??"null";
+                    String r_phno=data["r_phno"]??"null";
+                    String owner_flat=data["owner_flat"]??"null";
+                    String owner_mobno=data["owner_mob"]??"null";
+                    String book_name=data["bookName"]??"null";
+                    
+     showDialog(context: context,
+     builder:(BuildContext context){
+      return  Dialog(
+  backgroundColor: Colors.grey[900],
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(15),
+  ),
+  child: Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+         Center(
+          child: Text(
+            "Book Name",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Center(
+          child: Text(book_name,
+              style: TextStyle(color: Colors.white70)),
+        ),
+        const SizedBox(height: 30),
+        Center(
+          child: Text(
+            "Requester details",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Center(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Name : $requester",
+                        style: TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 6),
+                    Text("Flat no : $r_flat",
+                        style: TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 6),
+                    Text("Mob no : $r_phno",
+                        style: TextStyle(color: Colors.white70)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 30),
+        Center(
+          child: Text(
+            "Owner details",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Center(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Name : $owner",
+                        style: TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 6),
+                    Text("Flat no : $owner_flat",
+                        style: TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 6),
+                    Text("Mob no : $owner_mobno",
+                        style: TextStyle(color: Colors.white70)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 30),
+         Center(
+          child: Text(
+            "Duration ",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Center(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("$duration_value $duration_unit",
+                        style: TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 6),
+                    
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  ),
+);
+
+
+     });
+
+
+  }
+
 }
 
