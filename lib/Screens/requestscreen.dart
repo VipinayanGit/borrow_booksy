@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 class Requestscreen extends StatefulWidget {
   const Requestscreen({super.key});
@@ -72,10 +75,10 @@ Future<void>create_loan(
             r_phno
             )
             async{
-            String requester_Name=data["requesterName"];
-            dynamic requester_flatno=data["requester-flatno"];
-            String duration_value=data["duration_value"]; 
-            String duration_unit=data["duration_unit"];
+            String requester_Name=data["requesterName"]??"unknown";
+            dynamic requester_flatno=data["requester-flatno"]??"unknown";
+            String duration_value=data["duration_value"]??"unknown"; 
+            String duration_unit=data["duration_unit"]??"unknown";
             
 
            final   firestore=FirebaseFirestore.instance;
@@ -93,9 +96,12 @@ Future<void>create_loan(
                 "r_phno":r_phno,
                 "duration_value":duration_value,
                 "duration_unit":duration_unit,
-                "timestamp":DateTime.now(),
+                "Start_time":DateTime.now(),
+                "End_time":await _bookReceived(duration_value,duration_unit,data),
+                "loan_status":"not returned"
                 
               }); 
+              
      print("loan created");
      ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("loan created")),
@@ -109,19 +115,59 @@ Future<void>create_loan(
      }   
 }
 
+   Future<DateTime> _bookReceived(duration_value,duration_unit,data) async {
+    
 
-Future<void>remove_After_Receiving(String owner_role, String? ownerId, dynamic bookId, dynamic bookName, dynamic book_author, dynamic book_genre,Map<String, dynamic> data,dynamic owner_flat,var owner_mobile,duration_value,duration_unit,r_phno)async{
+    int durationValue = int.tryParse(duration_value) ?? 0;
+    if (durationValue <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Please enter a valid duration."),
+      ));
+     
+    }
+
+    DateTime startDate = DateTime.now();
+    DateTime endDate;
+
+    // Add based on selected unit
+    if (duration_unit == 'Seconds') {
+    endDate = startDate.add(Duration(seconds: durationValue));}
+    else if (duration_unit== 'Days') {
+      endDate = startDate.add(Duration(days: durationValue));
+    } else if (duration_unit == 'Months') {
+      endDate = DateTime(
+        startDate.year,
+        startDate.month + durationValue,
+        startDate.day,
+      );
+    } else {
+      endDate = DateTime(
+        startDate.year + durationValue,
+        startDate.month,
+        startDate.day,
+      );
+    }
+   
+
+
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+          "Timer started! Ends on: ${DateFormat('dd MMM yyyy').format(endDate)}"),
+    ));
+    return endDate;
+
+    // return to home
+  }
+ 
+
+
+
+
+
+Future<void>remove_After_Receiving(String owner_role, String? ownerId, dynamic bookId, dynamic bookName, dynamic book_author, dynamic book_genre,Map<String, dynamic> data,dynamic owner_flat,var owner_mobile,duration_value,duration_unit,r_phno,image)async{
  
  await create_loan( owner_role, ownerId, bookId, bookName,  book_author, book_genre, data, owner_flat,owner_mobile,duration_value,duration_unit,r_phno);
- 
- 
- 
- 
- 
- 
- 
- 
- 
+
   await FirebaseFirestore.instance
                   .collection('communities')
                   .doc(Cid)
@@ -136,12 +182,22 @@ Future<void>remove_After_Receiving(String owner_role, String? ownerId, dynamic b
                   "owner-id": ownerId,
                   "flatno":data['ownerflatno'],
                   "role":owner_role,
+                  "image_url":image,
                   "duration_unit":duration_unit,
                   "duration_value":duration_value,
+
+     
                  
     }]),
     "no_of_books": FieldValue.increment(-1),
   });
+
+
+
+   await FirebaseFirestore.instance.collection('communities').doc(Cid).collection(UserType!).doc(CustomUid).update({
+   'books_read':FieldValue.increment(1)
+   });
+
 }
 
   @override
@@ -204,9 +260,9 @@ for (var doc in snapshot.data!.docs) {
               var data=doc.data() as Map<String,dynamic>;
               String bookName = data['bookName'] ?? 'Unknown';
               String status = data['status'] ?? 'pending';
-              String requester = data['requesterName'];
-              String owner = data['requested-To'];
-              String r_mobile=data['r_phno'];
+              String requester = data['requesterName']??"unknown";
+              String owner = data['requested-To']??"unknown";
+              String r_mobile=data['r_phno']??"unknown";
               bool isRequester = requester == CustomUid;
               return ListTile(
                 title: Text("$bookName - $status"),
@@ -260,17 +316,17 @@ for (var doc in snapshot.data!.docs) {
                     .delete();
                     
                  
-               String owner_role=data['owner_role'];
-               String ownerId=data['requested-To'];
-               dynamic bookId=data['bookId'];
-               String bookName=data['bookName'];
-               String book_author=data['book_author'];
-               String book_genre=data['book_genre'];
-               String owner_flat=data['ownerflatno'];
-               String owner_mobile=data['ownermobno'];
-               String duration_unit=data["duration_unit"];
-               String duration_value=data["duration_value"] ;
-               String r_phno=data["r_phno"];
+               String owner_role=data['owner_role']??"unknown";
+               String ownerId=data['requested-To']??"unknown";
+               dynamic bookId=data['bookId']??"unknown";
+               String bookName=data['bookName']??"unknown";
+               String book_author=data['book_author']??"unknown";
+               String book_genre=data['book_genre']??"unknown";
+               String owner_flat=data['ownerflatno']??"unknown";
+               String owner_mobile=data['ownermobno']??"unknown";
+               String duration_unit=data["duration_unit"]??"unknown";
+               String duration_value=data["duration_value"]??"unknown" ;
+               String r_phno=data["r_phno"]??"unknown";
 
             
                print(owner_role);
@@ -283,8 +339,8 @@ for (var doc in snapshot.data!.docs) {
                print(duration_unit);
                print(r_phno);
                    //await create_loan(owner_role, ownerId, bookId, bookName, book_author, book_genre, data,owner_flat,owner_mobile);
-                   await remove_After_Receiving(owner_role, ownerId, bookId, bookName, book_author, book_genre, data,owner_flat,owner_mobile,duration_value,duration_unit,r_phno);
-               
+                   await remove_After_Receiving(owner_role, ownerId, bookId, bookName, book_author, book_genre, data,owner_flat,owner_mobile,duration_value,duration_unit,r_phno,data['image']);
+                   
                    print("book deleted successfully");
                    
               if (Navigator.canPop(context)) {

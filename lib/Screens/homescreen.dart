@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+import 'package:borrow_booksy/Screens/transactions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,15 +12,29 @@ class Homescreen extends StatefulWidget {
 }
 
 class _HomescreenState extends State<Homescreen> {
- 
+
+static bool _dialogShownThisSession = false;
 @override
-void initState(){
-    super.initState();
-  
-    _loaduserData();
-  
-   
-  }
+void initState() {
+  super.initState();
+  _initializeData();
+   resetDialogSessionFlag(); 
+
+}
+
+Future<void> _initializeData() async {
+  await _loaduserData(); // ✅ Wait until user data is loaded
+ WidgetsBinding.instance.addPostFrameCallback((_){
+    checkLoanTimers();  
+ });
+     // ✅ Now safe to call
+}
+
+//static bool dialogShownThisSession = false;
+  Map<String, dynamic> loanTimers = {};
+  Timer? checkTimer;
+ DateTime? endDate;
+ 
  String? selectedGenre;
   Future<List<Map<String, dynamic>>>? futureBooks;
   String?CustomUid;
@@ -31,8 +48,6 @@ void initState(){
   TextEditingController searchController = TextEditingController();
 
   
-
-
   Future<void>_loaduserData()async{
     print("Loading user data from SharedPreferences...");
     SharedPreferences prefs=await SharedPreferences.getInstance();
@@ -56,8 +71,8 @@ void initState(){
          
 
       });
-          print("Stored User ID: $storeduserid");
-    print("Stored Community ID: $storedcommunityid");
+          print("CustomUid: $CustomUid");
+    print("Cid: $Cid");
     print("Is Admin: $isAdmin");
     print("flat no: $flat");
       print("Cid updated: $Cid");
@@ -70,6 +85,144 @@ void initState(){
       print("Error: User ID or Community ID is null.");
     }
   }
+
+
+Future<void> checkLoanTimers() async {
+  final firestore = FirebaseFirestore.instance;
+  final prefs = await SharedPreferences.getInstance();
+  if (_dialogShownThisSession || (prefs.getBool('dialogShown') ?? false)) {
+    print("🛑 Dialog already shown — skipping this session.");
+    return;
+  }
+  print("Checking loans for Cid: $Cid and user: $CustomUid");
+
+
+
+  print("🔍 Checking loans for Cid: $Cid and user: $CustomUid");
+
+  final collectionRef = firestore
+      .collection('communities')
+      .doc(Cid)
+      .collection('loans');
+
+  print("📂 Full path checked: communities/$Cid/loans");
+
+  final querySnapshot = await collectionRef
+      .where('loan_status', isEqualTo: 'not returned')
+      .get();
+
+  print("📄 Query snapshot received: ${querySnapshot.docs.length} docs found");
+
+
+  print("Found ${querySnapshot.docs.length} active loan(s)");
+  final now = DateTime.now();
+
+
+  for (var doc in querySnapshot.docs) {
+    final data = doc.data();
+    final endTime = (data['End_time'] as Timestamp).toDate();
+    final isExpired = now.isAfter(endTime);
+
+    print("🔹 Loan ID: ${doc.id}");
+    print("Requester: ${data['requester_name']}");
+    print("Owner: ${data['ownerId']}");
+    print("End time: $endTime");
+    print("Now: $now");
+    print("Expired? $isExpired");
+
+    if (isExpired) {
+      // requester
+      if (data['requester_name'] == CustomUid) {
+        
+        setState(() {
+           _dialogShownThisSession = true;
+        });
+        
+        print("Requester matched! Showing requester dialog...");
+        await prefs.setBool('dialogShown', true);
+        await showDialog(
+          context: context,
+          builder: (_) => requesterDialog(context, data, doc.id),
+        );
+       
+        break;
+      }
+
+      // owner
+      else if (data['ownerId'] == CustomUid) {
+        setState(() {
+           _dialogShownThisSession = true;
+        });
+        
+        print("Owner matched! Showing owner dialog...");
+        await prefs.setBool('dialogShown', true);
+        await showDialog(
+          context: context,
+          builder: (_) => ownerDialog(context, data, doc.id),
+        );
+        
+        break;
+      }
+    }
+  }
+
+  if (_dialogShownThisSession) {
+    print("✅ Dialog shown successfully!");
+  } else {
+    print("❌ No dialog shown — maybe no expired loans or no matching user.");
+  }
+}
+Future<void> resetDialogSessionFlag() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setBool('dialogShown', false);
+}
+
+Widget requesterDialog(BuildContext context, Map<String, dynamic> data, String docId) {
+  return AlertDialog(
+    title: Text("Return Reminder"),
+    content: Text("You have exceeded the loan period for '${data['bookName']}'."),
+    actions: [
+      TextButton(
+        onPressed: () {
+          Navigator.pop(context);
+          Navigator.pushReplacement(context,MaterialPageRoute(builder: (context)=>Transactions()));
+        },
+        child: Text("Go to Transactions"),
+      ),
+    ],
+  );
+}
+Widget ownerDialog(BuildContext context, Map<String, dynamic> data, String docId) {
+  return AlertDialog(
+    title: Text("Book Overdue"),
+    content: Text("${data['requester_name']} has not returned '${data['bookName']}' yet."),
+    actions: [
+      TextButton(
+        onPressed: () {
+          // book returned → delete doc or update status
+  
+
+          FirebaseFirestore.instance.collection('communities')
+              .doc(Cid)
+              .collection('loans')
+              .doc(docId)
+              .update({'loan_status': 'returned'});
+          Navigator.pop(context);
+        
+        },
+        child: Text("book returned"),
+      ),
+      SizedBox(height: 20),
+       TextButton(
+        onPressed: () {
+          Navigator.pop(context);
+        
+        },
+        child: Text("close"),
+      ),
+    ],
+  );
+}
 
 
 
@@ -169,7 +322,8 @@ Future<void>SendBookRequest({
     required String book_author,
     required duration_value,
     required duration_unit,
-    required phno
+    required phno,
+    required image
   })async{
     String?ownerflatno;
     String?ownermobno;
@@ -230,7 +384,8 @@ Future<void>SendBookRequest({
           "book_author":book_author,
           "duration_value":duration_value,
           "duration_unit":duration_unit,
-          "r_phno":phno
+          "r_phno":phno,
+          "image":image
 
          });
 
@@ -327,7 +482,8 @@ Widget build(BuildContext context) {
                   padding: EdgeInsets.all(7),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    childAspectRatio:  1.4/ 2,
+                    childAspectRatio: MediaQuery.of(context).size.width /
+                  (MediaQuery.of(context).size.height / 1.45),
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
                   ),
@@ -341,39 +497,49 @@ Widget build(BuildContext context) {
                 child: Container(
                   padding:EdgeInsets.all(5),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(5),
-                    border: Border.all(color: Colors.white),
+                    //color: const Color(0xFF2F2C39),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white12),
                   ),
                   child: Center(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
-                          padding: EdgeInsets.only(top: 10),
-                          height: 150,
-                          width: 120,
-                         decoration: BoxDecoration(
-                              image: DecorationImage(
-                                image:NetworkImage(book["image_url"]??"") ,
-                                fit: BoxFit.fill
-                                
-                              ),
-                             
-                            ),  // Placeholder for book image
+                        ClipRRect(
+                           borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(16),
+                          ),
+                          child: Container(
+                            padding: EdgeInsets.only(top: 10),
+                            height: 150,
+                            width: 120,
+                           decoration: BoxDecoration(
+                                image: DecorationImage(
+                                  image:NetworkImage(book["image_url"]??"") ,
+                                  fit: BoxFit.fill
+                                  
+                                ),
+                               
+                              ),  // Placeholder for book image
+                          ),
                         ),
                         SizedBox(height: 20),
                         Text(
                           book["name"] ?? "Unknown Book",
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle( color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500),
                         ),
                         Text(
                         book["authorname"] ?? "Unknown Author",
+                        style:  TextStyle(color: Colors.grey[400], fontSize: 14),
                         ),
                         Text(
                            book["genre"] ?? "No Genre",
-                          style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.grey),
+                          style: TextStyle( color: Colors.purple[200],
+                          fontStyle: FontStyle.italic,),
                         ),
                       ],
                     ),
@@ -412,152 +578,163 @@ Widget build(BuildContext context) {
   String duration_unit=book["duration_unit"];
 
   showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        child: IntrinsicHeight(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
+  context: context,
+  builder: (BuildContext context) {
+    return Dialog(
+      backgroundColor: const Color(0xFF1E1E1E),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Book Image
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    decoration: BoxDecoration(
-                              image: DecorationImage(
-                                image:NetworkImage(imageurl) ,
-                                
-                              ),
-                             
-                            ), // Placeholder for book image
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    imageurl,
                     width: 100,
-                    height: 150,
+                    height: 140,
+                    fit: BoxFit.cover,
                   ),
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 // Book Details
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Book Name
                       Text(
                         bookName,
-                        style: TextStyle(
-                          
-                          fontSize: 18,
+                        style: const TextStyle(
+                          fontSize: 22,
                           fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
-                      
-                        softWrap: true,
-                        overflow: TextOverflow.visible, // Handles long text gracefully
-                        maxLines: 4,
                       ),
-                      SizedBox(height: 8),
-                      // Author Name
+                      const SizedBox(height: 4),
                       Text(
-                        "Author: ${authorName}",
+                        "by $authorName",
                         style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                          
+                          fontSize: 15,
+                          color: Colors.grey[400],
                         ),
-                
-                        softWrap: true,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 3,
                       ),
-                      SizedBox(height: 8),
-                      Text(
-                        "Genre:${genre}",
-                        style:TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
+                      const SizedBox(height: 10),
+                      // Genre Chip
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2D3E50),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        softWrap: true,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 2,
-                      ),
-                      Text(
-                        "Owner:${owner}",
-                        style:TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
+                        child: Text(
+                          genre,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.white,
+                          ),
                         ),
-                        softWrap: true,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 2,
                       ),
-                      Text(
-                        "Owner_role:${owner_role}",
-                        style:TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                        softWrap: true,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 2,
-                      ),
-                      
-                      Text(
-                         "Duration:$duration_value" " $duration_unit",
-                        style:TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                        softWrap: true,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                     
-                      ),
-                           Column(
-                       // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                         
-                         owner!=CustomUid?TextButton(
-                            onPressed: ()async {
-                          Navigator.pop(context);
-
-                          await SendBookRequest(
-                            ownerId: owner,
-                            bookId: bookid,
-                            bookName: bookName,
-                            requesterName:CustomUid,
-                            flatno:flat,
-                            owner_role:owner_role,
-                            book_genre:book_genre,
-                            book_author:book_author,
-                            duration_value:duration_value,
-                            duration_unit:duration_unit,
-                            phno:phno
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Request sent to book owner")),
-      );
-                          
-                            },
-                            child: Text(
-                              "Request",
-                              style: TextStyle(color: Colors.blue),
-                            ),
-                          ):
-                          Container(),
-                        ],
-                      ),
+                      const SizedBox(height: 16),
+                      // Owner Info
+                      _buildDetailRow("Owner", owner),
+                      const SizedBox(height: 4),
+                      _buildDetailRow("Role", owner_role),
+                      const SizedBox(height: 4),
+                      _buildDetailRow(
+                          "Duration", "$duration_value $duration_unit"),
                     ],
                   ),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 24),
+            // Request Button
+            owner != CustomUid
+                ? SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1A73E8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        elevation: 3,
+                      ),
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        await SendBookRequest(
+                          ownerId: owner,
+                          bookId: bookid,
+                          bookName: bookName,
+                          requesterName: CustomUid,
+                          flatno: flat,
+                          owner_role: owner_role,
+                          book_genre: book_genre,
+                          book_author: book_author,
+                          duration_value: duration_value,
+                          duration_unit: duration_unit,
+                          phno: phno,
+                          image: imageurl,
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Request sent to book owner"),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        "Request Book",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  )
+                : const SizedBox(),
+          ],
         ),
-      );
-    },
+      ),
+    );
+  },
+);
+
+
+}
+Widget _buildDetailRow(String label, String value) {
+  return Row(
+    children: [
+      Text(
+        "$label: ",
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+          fontSize: 14,
+        ),
+      ),
+      Expanded(
+        child: Text(
+          value,
+          style: TextStyle(
+            color: Colors.grey[400],
+            fontSize: 14,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    ],
   );
 }
-
 }

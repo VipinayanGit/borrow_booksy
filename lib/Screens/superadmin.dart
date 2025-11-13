@@ -60,7 +60,8 @@ try{
     "uid":firebaseUid,
     "role":"user",
     "flatno":flatno,
-    "phno":phno
+    "phno":phno,
+    "books_read":0
   });
    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("User created")));
  
@@ -111,8 +112,8 @@ try{
       "uid":firebaseUid,
       "role":"admin",
       "flatno":flatno,
-      "phno":phno
-
+      "phno":phno,
+      "books_read":0
     });
    namecontroller.clear();
    emailcontroller.clear();

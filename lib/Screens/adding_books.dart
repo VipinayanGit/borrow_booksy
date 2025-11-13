@@ -28,7 +28,7 @@ class _AddBooksState extends State<AddBooks> {
    String BookName="";
    bool _isLoading=false;
    TextEditingController _authornamecontroller=TextEditingController();
-    List<String> d_units=["Hours","days","months","years"];
+    List<String> d_units=["Seconds","Days","Months","Years"];
     String? final_du=null;
     List<String> genres = ["Fiction", "Non-Fiction", "Mystery", "Fantasy", "Science Fiction", "Biography", "History", "Poetry"];
     String? selectedGenre=null;
@@ -39,6 +39,10 @@ class _AddBooksState extends State<AddBooks> {
   Map<String, dynamic>? userData;
   TextEditingController _dvController=TextEditingController();
    String d_value="";
+   bool bookname_iseditable=false;
+   List<String>invalid_booknames=['not a book','no title'];
+
+  
    
  
   final List<String> forbiddenWords = ["badword","block","fuck","bitch","ass","fuck","no title","not a book"];
@@ -160,7 +164,7 @@ class _AddBooksState extends State<AddBooks> {
 
 //print("📥 Response status: ${res.statusCode}");
 //print("📥 Response body: ${res.body}");
-    var uri = Uri.parse("http://192.168.137.38:5000/process_image");
+    var uri = Uri.parse("https://borrow-booksy.onrender.com/process_image");
     var request = http.MultipartRequest('POST', uri)
         ..files.add(await http.MultipartFile.fromPath(
           'image',
@@ -174,7 +178,9 @@ class _AddBooksState extends State<AddBooks> {
            var data = jsonDecode(res.body);
         setState(() {
             print(data['gemini_response']);    
-            BookName=data['gemini_response'];                
+            BookName=data['gemini_response'];     
+            bool restricted_names=invalid_booknames.any((b)=>b.toLowerCase().contains(BookName!.toLowerCase()) )  ;  
+            bookname_iseditable=!restricted_names;
         });
       } else {
         print("❌ Upload failed: ${response.statusCode}");
@@ -297,16 +303,23 @@ Future<String?> uploadImageToCloudinary(
                     SizedBox(height:10),
                     
                     SizedBox(height:10),
-                    TextField(
-                      controller: TextEditingController(text: BookName??""),
-                      readOnly:true,
-                      maxLines: null,
-                      decoration: InputDecoration(
-                        hintText: "Auto fetching the book name",
-                        border: OutlineInputBorder()
-                      ),
-          
-                    ),
+                    
+                        TextField(
+                          controller: TextEditingController(text: BookName??""),
+                          readOnly:!bookname_iseditable,
+                          maxLines: null,
+                          decoration: InputDecoration(
+                            hintText: "Auto fetching the book name",
+                            border: OutlineInputBorder()
+                            
+                          ),
+                                  
+                        ),
+                      
+                       
+                        
+                      
+                    
                     SizedBox(height: 10),
                     TextField(
                       controller: _authornamecontroller,
@@ -385,10 +398,12 @@ Future<String?> uploadImageToCloudinary(
                              return;
                         }
                         if(BookName=="no title"){
+                           
                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("there is no title for book")));
                             return ;
                         }
                         if(BookName=="not a book"){
+
                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("It is not a book")));
                             return ;
                         }

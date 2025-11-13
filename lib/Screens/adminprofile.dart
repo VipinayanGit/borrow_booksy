@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:borrow_booksy/Screens/adding_books.dart';
+import 'package:borrow_booksy/Screens/transactions.dart';
 import 'package:borrow_booksy/Screens/login.dart';
 import 'package:borrow_booksy/Screens/requestscreen.dart';
 import 'package:borrow_booksy/Screens/transaction_history.dart';
@@ -151,7 +152,8 @@ try{
     "uid":firebaseUid,
     "role":"user",
     "flatno":flatno,
-    "phno":phno
+    "phno":phno,
+    "books_read":0
   });
    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("User created")));
  
@@ -367,13 +369,19 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                 ListTile(
                   title: Text("Log out"),
                   onTap: () {
-                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => login()));//driveService: widget.driveService,
+                    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => login()));
                   },
                 ),
                 ListTile(
                   title: Text("transaction history"),
                   onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => TransactionHistory()));//driveService: widget.driveService,
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => TransactionHistory()));
+                  },
+                ),
+                ListTile(
+                  title: Text("transactions"),
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => Transactions()));
                   },
                 ),
               ],
@@ -385,61 +393,176 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
             padding: const EdgeInsets.all(8.0),
             child: Column(
               children: [
-                Container(
-                  width: double.infinity,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      CircleAvatar(radius: 50),
-                      Container(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                 Container(
+                    margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF262430),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+
+
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Profile Icon
+                  const CircleAvatar(
+                    radius: 35,
+                    backgroundColor: Color(0xFF6E5DE7),
+                    child: Icon(Icons.person, color: Colors.white, size: 40),
+                  ),
+                  const SizedBox(width: 20),
+
+                  // Admin Details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                           userData!['name']??"unknown name",
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "Community: $Cid",
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.grey[300],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "Flat No: $flat",
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.grey[400],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
                           children: [
-                            Text(
-                               userData != null ? userData!['communityid'] ?? 'N/A' : 'Loading...',
-                              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed:(){Navigator.push(context,MaterialPageRoute(builder: (context)=>AddBooks()));},
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF6E5DE7),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 5),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.book, color: Colors.white),
+                                label: const Text("Add Books",style: TextStyle(color: Colors.white),),
+                              ),
                             ),
-                            Text(userData != null ? userData!['name'] ?? 'N/A' : 'Loading...'),
-                            Text(userData != null ? userData!['flatno'] ?? 'N/A' : 'Loading...'),
-                            SizedBox(height: 10),
-                            Row(
-                              children: [
-                                SizedBox(width: 5),
-                                Container(
-                                  height: 35,
-                                  width: 85,
-                                  child: ElevatedButton(
-                                    onPressed:(){ Navigator.push(context,MaterialPageRoute(builder: (context)=>AddBooks()));},
-                                    child: Text(
-                                      textAlign: TextAlign.center,
-                                      "Add Books",
-                                      style: TextStyle(fontSize: 10),
-                                    ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed:(){
+                                  _manageusers(context);
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: Color(0xFF6E5DE7)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 5),
                                 ),
-                                SizedBox(width: 5),
-                                Container(
-                                  height: 35,
-                                  width: 85,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      _manageusers(context);
-                                    },
-                                    child: Text(
-                                      textAlign: TextAlign.center,
-                                      "Manage users",
-                                      style: TextStyle(fontSize: 10),
-                                    ),
-                                  ),
+                                icon: const Icon(Icons.group,
+                                    color: Color(0xFF6E5DE7)),
+                                label: const Text(
+                                  "Manage Users",
+                                  style: TextStyle(color: Color(0xFF6E5DE7)),
                                 ),
-                              ],
-                            )
+                              ),
+                            ),
                           ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                ],
+              ),
+                 ),
+                 
+
+
+
+
+
+                // Container(
+                //   width: double.infinity,
+                //   child: Row(
+                //     mainAxisAlignment: MainAxisAlignment.spaceAround,
+                //     children: [
+                      
+                //      // CircleAvatar(radius: 50),
+                //       Container(
+                //         child: Column(
+                //           crossAxisAlignment: CrossAxisAlignment.start,
+                //           children: [
+                //             Text(
+                //                userData != null ? userData!['communityid'] ?? 'N/A' : 'Loading...',
+                //               style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                //             ),
+                //             Text(userData != null ? userData!['name'] ?? 'N/A' : 'Loading...'),
+                //             Text(userData != null ? userData!['flatno'] ?? 'N/A' : 'Loading...'),
+                //             SizedBox(height: 10),
+                            
+                //           ],
+                //         ),
+                //       ),
+                //       Column(
+                             
+                //               children: [
+                //                 Padding(padding: EdgeInsets.only(bottom:20)),
+                //                 SizedBox(width: 5),
+                //                 Container(
+                //                   padding: EdgeInsets.all(10),
+                //                   height: 40,
+                //                   width: 120,
+                //                   child: ElevatedButton(
+                //                     onPressed:(){ Navigator.push(context,MaterialPageRoute(builder: (context)=>AddBooks()));},
+                //                     child: Text(
+                //                       textAlign: TextAlign.center,
+                //                       "Add Books",
+                //                       style: TextStyle(fontSize: 10),
+                //                     ),
+                //                   ),
+                //                 ),
+                //                 SizedBox(width: 5),
+                //                 Container(
+                //                   height: 40,
+                //                   width: 120,
+                //                   child: ElevatedButton(
+                //                     onPressed: () {
+                //                       _manageusers(context);
+                //                     },
+                //                     child: Text(
+                //                       textAlign: TextAlign.center,
+                //                       "Manage users",
+                //                       style: TextStyle(fontSize: 10),
+                //                     ),
+                //                   ),
+                //                 ),
+                //               ],
+                //             )
+                //     ],
+                //   ),
+                // ),
                 SizedBox(height: 10),
                 TabBar(tabs: [
                   Tab(
@@ -500,35 +623,45 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                 },
                 child: Container(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(5),
-                    border: Border.all(color: Colors.white),
+                //  color: const Color(0xFF2F2C39),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white12),
                   ),
                   child: Center(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
-                          height: 150,
-                          width: 120,
-                           decoration: BoxDecoration(
-                              image: DecorationImage(
-                                image:NetworkImage(imageurl) ,
-                                
-                              ),
-                             
-                            ), // Placeholder for book image
+                        
+                        ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(16),
+                          ),
+                          child: Container(
+                            height: 150,
+                            width: 120,
+                             decoration: BoxDecoration(
+                                image: DecorationImage(
+                                  image:NetworkImage(imageurl) ,
+                                  
+                                ),
+                               
+                              ), // Placeholder for book image
+                          ),
                         ),
                         SizedBox(height: 10),
                         Text(
                           bookName,
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(                           color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500),
                         ),
                         Text(authorName),
                         Text(
                           genre,
-                          style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.grey),
+                          style: TextStyle( color: Colors.purple[200],
+                          fontStyle: FontStyle.italic,),
                         ),
                       ],
                     ),
@@ -770,143 +903,165 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
   
 
 try{
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        child: IntrinsicHeight(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
+ showDialog(
+  context: context,
+  builder: (BuildContext context) {
+    return Dialog(
+      backgroundColor: const Color(0xFF1E1E1E),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Book Image
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    decoration: BoxDecoration(
-                              image: DecorationImage(
-                                image:NetworkImage(imageurl) ,
-                                
-                              ),
-                             
-                            ), // Placeholder for book image
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    imageurl,
                     width: 100,
-                    height: 150,
+                    height: 140,
+                    fit: BoxFit.cover,
                   ),
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
+
                 // Book Details
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
                     children: [
                       // Book Name
                       Text(
                         bookName,
-                        style: TextStyle(
-                          
-                          fontSize: 18,
+                        style: const TextStyle(
+                          fontSize: 22,
                           fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
-                      
-                        softWrap: true,
-                        overflow: TextOverflow.visible, // Handles long text gracefully
-                        maxLines: 4,
                       ),
-                      SizedBox(height: 8),
-                      // Author Name
+                      const SizedBox(height: 4),
+
+                      // Author
                       Text(
-                        "Author: ${authorName}",
+                        "by $authorName",
                         style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                          
+                          fontSize: 15,
+                          color: Colors.grey[400],
                         ),
-                        
-                        softWrap: true,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 3,
                       ),
-                      SizedBox(height: 8),
-                      Text(
-                        "Genre:${genre}",
-                        style:TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
+
+                      const SizedBox(height: 10),
+
+                      // Genre chip
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2D3E50),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        softWrap: true,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 2,
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        "Role:${owner_role}",
-                        style:TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                        softWrap: true,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                       SizedBox(height: 8),
-                     
-                      Text(
-                        "owner:${owner}",
-                        style:TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                        softWrap: true,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                      Text(
-                        "duration:${duration_value} ${duration_unit}",
-                        style:TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                        softWrap: true,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                      
-                           Column(
-                       // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                        
-                          TextButton(
-                           onPressed: ()async {
-                              // Remove book from list
-                             await deleteImageUsingUrl(imageurl);
-                             await _removeBookFromDB(book, index);
-                             Navigator.pop(context);
-                            },
-                            child: Text(
-                              "Remove",
-                              style: TextStyle(color: Colors.red),
-                            ),
+                        child: Text(
+                          genre,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.white,
                           ),
-                        ],
+                        ),
                       ),
+
+                      const SizedBox(height: 16),
+                      // Details
+                      _buildDetailRow("Role", owner_role),
+                      const SizedBox(height: 4),
+                      _buildDetailRow("Owner", owner),
+                      const SizedBox(height: 4),
+                      _buildDetailRow(
+                          "Duration", "$duration_value $duration_unit"),
                     ],
                   ),
                 ),
               ],
             ),
-          ),
+
+            const SizedBox(height: 24),
+
+            // Remove Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 3,
+                ),
+                onPressed: () async {
+                  await deleteImageUsingUrl(imageurl);
+                  await _removeBookFromDB(book, index);
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Book removed successfully"),
+                    ),
+                  );
+                },
+                child: const Text(
+                  "Remove Book",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-      );
-    },
-  );
+      ),
+    );
+  },
+);
 }catch (e, stackTrace) {
   print('Error in showDialog: $e');
   print(stackTrace);
 }
+}
+
+
+
+Widget _buildDetailRow(String label, String value) {
+  return Row(
+    children: [
+      Text(
+        "$label: ",
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+          fontSize: 14,
+        ),
+      ),
+      Expanded(
+        child: Text(
+          value,
+          style: TextStyle(
+            color: Colors.grey[400],
+            fontSize: 14,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    ],
+  );
 }
 
 
