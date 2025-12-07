@@ -8,6 +8,7 @@ import 'package:borrow_booksy/Screens/transaction_history.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -262,9 +263,9 @@ Future<void> _removeBookFromDB(Map<String, dynamic> book, int index) async {
 
 
 Future<void> deleteImageFromCloudinary(String publicId) async {
-  const cloudName = 'di24ilgw4';
-  const apiKey = '283866122381729';
-  const apiSecret = 'cVnq7zpNpHxV16NYiXAXzoFUSzQ';
+  final cloudName = dotenv.env['CLOUD_NAME'];
+  final apiKey = dotenv.env['API_KEY'];
+  final apiSecret = dotenv.env['API_SECRET'];
 
   final auth = 'Basic ' + base64Encode(utf8.encode('$apiKey:$apiSecret'));
 

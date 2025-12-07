@@ -7,8 +7,8 @@ import 'profilescreen.dart';
 class Navscreen extends StatefulWidget {
  
  
- final String role;
- Navscreen({required this.role,Key?key}):super(key:key );
+final String role;
+Navscreen({required this.role,Key?key}):super(key:key );
   
  
   
@@ -55,43 +55,45 @@ class _NavscreenState extends State<Navscreen> {
     final screens = isAdmin ? _adminScreens : _userScreens;
 
     return Scaffold(
-      body: screens[selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(  
-        currentIndex: selectedIndex,
-        items:isAdmin
-        ?[
-          BottomNavigationBarItem(
-                  icon: Icon(Icons.settings_accessibility_outlined),
-                  label: "admin",
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.bar_chart),
-                  label: "Events",
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.person),
-                  label: " Profile",
-                ),
-        ]:[
-          BottomNavigationBarItem(
-                  icon: Icon(Icons.home),
-                  label: "user",
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.policy),
-                  label: "EVENTS",
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.person),
-                  label: "Profile",
-                ),
-        ],
-        selectedItemColor: Colors.white,
-        onTap: ontapped,
-        selectedLabelStyle: TextStyle(
-          fontWeight: FontWeight.bold,
-           ),
-      ),
-    );
+  body: IndexedStack(
+    index: selectedIndex,
+    children: screens,
+  ),
+  bottomNavigationBar: BottomNavigationBar(
+    currentIndex: selectedIndex,
+    items: isAdmin
+        ? [
+            BottomNavigationBarItem(
+                icon: Icon(Icons.settings_accessibility_outlined),
+                label: "admin",
+            ),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.bar_chart),
+                label: "Events",
+            ),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: "Profile",
+            ),
+          ]
+        : [
+            BottomNavigationBarItem(
+                icon: Icon(Icons.home),
+                label: "user",
+            ),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.policy),
+                label: "EVENTS",
+            ),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: "Profile",
+            ),
+          ],
+    selectedItemColor: Colors.white,
+    onTap: ontapped,
+    selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold),
+  ),
+);
   }
 }

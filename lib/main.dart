@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'Screens/login.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 
 void main() async{
@@ -20,7 +21,8 @@ void main() async{
  Widget startPage = await getStartScreen();
  
  bool isloggedin=await checkFirebaseAuthStatus();
- 
+await dotenv.load(fileName: ".env");
+
 runApp(MyApp(startPage:startPage));
  
 

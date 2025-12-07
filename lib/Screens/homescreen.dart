@@ -18,7 +18,7 @@ static bool _dialogShownThisSession = false;
 void initState() {
   super.initState();
   _initializeData();
-   resetDialogSessionFlag(); 
+  
 
 }
 
@@ -90,91 +90,70 @@ Future<void> _initializeData() async {
 Future<void> checkLoanTimers() async {
   final firestore = FirebaseFirestore.instance;
   final prefs = await SharedPreferences.getInstance();
-  if (_dialogShownThisSession || (prefs.getBool('dialogShown') ?? false)) {
-    print("🛑 Dialog already shown — skipping this session.");
-    return;
+
+  // Read last time shown
+  final lastShownMillis = prefs.getInt('lastDialogShownTime');
+  DateTime? lastShownTime = lastShownMillis != null
+      ? DateTime.fromMillisecondsSinceEpoch(lastShownMillis)
+      : null;
+
+  final now = DateTime.now();
+
+  // 🔴 If dialog was shown within the last 24 hours → Do NOT show again
+  if (lastShownTime != null) {
+    final minutes = now.difference(lastShownTime).inMinutes;
+    if (minutes < 24) {
+      print("⏳ Dialog was shown $minutes hours ago → Not showing again.");
+      return;
+    }
   }
-  print("Checking loans for Cid: $Cid and user: $CustomUid");
 
-
-
-  print("🔍 Checking loans for Cid: $Cid and user: $CustomUid");
+  print("🔍 Checking expired loans for cid=$Cid user=$CustomUid");
 
   final collectionRef = firestore
       .collection('communities')
       .doc(Cid)
       .collection('loans');
 
-  print("📂 Full path checked: communities/$Cid/loans");
-
   final querySnapshot = await collectionRef
       .where('loan_status', isEqualTo: 'not returned')
       .get();
-
-  print("📄 Query snapshot received: ${querySnapshot.docs.length} docs found");
-
-
-  print("Found ${querySnapshot.docs.length} active loan(s)");
-  final now = DateTime.now();
-
 
   for (var doc in querySnapshot.docs) {
     final data = doc.data();
     final endTime = (data['End_time'] as Timestamp).toDate();
     final isExpired = now.isAfter(endTime);
 
-    print("🔹 Loan ID: ${doc.id}");
-    print("Requester: ${data['requester_name']}");
-    print("Owner: ${data['ownerId']}");
-    print("End time: $endTime");
-    print("Now: $now");
-    print("Expired? $isExpired");
+    if (!isExpired) continue;
 
-    if (isExpired) {
-      // requester
-      if (data['requester_name'] == CustomUid) {
-        
-        setState(() {
-           _dialogShownThisSession = true;
-        });
-        
-        print("Requester matched! Showing requester dialog...");
-        await prefs.setBool('dialogShown', true);
-        await showDialog(
-          context: context,
-          builder: (_) => requesterDialog(context, data, doc.id),
-        );
-       
-        break;
-      }
+    // 🔹 REQUESTER
+    if (data['requester_name'] == CustomUid) {
+      print("📌 Requester expired loan. Showing dialog…");
 
-      // owner
-      else if (data['ownerId'] == CustomUid) {
-        setState(() {
-           _dialogShownThisSession = true;
-        });
-        
-        print("Owner matched! Showing owner dialog...");
-        await prefs.setBool('dialogShown', true);
-        await showDialog(
-          context: context,
-          builder: (_) => ownerDialog(context, data, doc.id),
-        );
-        
-        break;
-      }
+      // store timestamp
+      await prefs.setInt('lastDialogShownTime', now.millisecondsSinceEpoch);
+
+      await showDialog(
+        context: context,
+        builder: (_) => requesterDialog(context, data, doc.id),
+      );
+      return;
+    }
+
+    // 🔹 OWNER
+    if (data['ownerId'] == CustomUid) {
+      print("📌 Owner expired loan. Showing dialog…");
+
+      // store timestamp
+      await prefs.setInt('lastDialogShownTime', now.millisecondsSinceEpoch);
+
+      await showDialog(
+        context: context,
+        builder: (_) => ownerDialog(context, data, doc.id),
+      );
+      return;
     }
   }
-
-  if (_dialogShownThisSession) {
-    print("✅ Dialog shown successfully!");
-  } else {
-    print("❌ No dialog shown — maybe no expired loans or no matching user.");
-  }
-}
-Future<void> resetDialogSessionFlag() async {
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setBool('dialogShown', false);
 }
 
 Widget requesterDialog(BuildContext context, Map<String, dynamic> data, String docId) {
@@ -185,13 +164,17 @@ Widget requesterDialog(BuildContext context, Map<String, dynamic> data, String d
       TextButton(
         onPressed: () {
           Navigator.pop(context);
-          Navigator.pushReplacement(context,MaterialPageRoute(builder: (context)=>Transactions()));
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => Transactions()),
+          );
         },
         child: Text("Go to Transactions"),
       ),
     ],
   );
 }
+
 Widget ownerDialog(BuildContext context, Map<String, dynamic> data, String docId) {
   return AlertDialog(
     title: Text("Book Overdue"),
@@ -199,31 +182,24 @@ Widget ownerDialog(BuildContext context, Map<String, dynamic> data, String docId
     actions: [
       TextButton(
         onPressed: () {
-          // book returned → delete doc or update status
-  
-
-          FirebaseFirestore.instance.collection('communities')
+          FirebaseFirestore.instance
+              .collection('communities')
               .doc(Cid)
               .collection('loans')
               .doc(docId)
               .update({'loan_status': 'returned'});
+
           Navigator.pop(context);
-        
         },
-        child: Text("book returned"),
+        child: Text("Book Returned"),
       ),
-      SizedBox(height: 20),
-       TextButton(
-        onPressed: () {
-          Navigator.pop(context);
-        
-        },
-        child: Text("close"),
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: Text("Close"),
       ),
     ],
   );
 }
-
 
 
 Future<List<Map<String, dynamic>>> fetchBooksFromFirestore() async {
@@ -435,12 +411,26 @@ Future<Map<String, dynamic>?> fetchOwnerDetails(String ownerid) async{
 
 
 }
+void refreshBooks() async {
+  setState(() {
+    futureBooks = fetchBooksFromFirestore();
+  });
+}
+
  
   
   @override
 Widget build(BuildContext context) {
   return Scaffold(
-    appBar: AppBar(title: Text("Homescreen")),
+    appBar: AppBar(
+      title: Text("Homescreen"),
+      actions: [
+        IconButton(onPressed: (){
+           refreshBooks(); 
+        },
+         icon:Icon(Icons.refresh))
+      ],
+    ),
     body: SafeArea(
       child: Column(
         children: [

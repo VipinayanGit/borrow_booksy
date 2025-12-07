@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 
 
@@ -29,11 +30,14 @@ class _ProfilescreenState extends State<Profilescreen> {
    File? _selectedImage;
     String response_bkname="";
 final ImagePicker _picker = ImagePicker();
+bool loaded = false;
 
   @override
   void initState(){
     super.initState();
+  
     _loaduserData();
+  
   }
   final GlobalKey<ScaffoldState> _ScaffoldKey = GlobalKey<ScaffoldState>();
   
@@ -54,11 +58,11 @@ final ImagePicker _picker = ImagePicker();
   Future<void>_loaduserData()async{
     print("Loading user data from SharedPreferences...");
     SharedPreferences prefs=await SharedPreferences.getInstance();
-    String? storeduserid=prefs.getString('userId');
-    String? storedcommunityid=prefs.getString('communityId');
-    String? storedflatno=prefs.getString('flat');
+    String? storeduserid=prefs.getString('userId')??"";
+    String? storedcommunityid=prefs.getString('communityId')??"";
+    String? storedflatno=prefs.getString('flat')??"";
     bool isAdmin=prefs.getBool('isadmin')??false;
-    mobile=prefs.getString('phno')??"null";
+    mobile=prefs.getString('phno')??"";
 
     print("Stored User ID: $storeduserid");
     print("Stored Community ID: $storedcommunityid");
@@ -76,7 +80,8 @@ final ImagePicker _picker = ImagePicker();
       });
 
       print("calling _fetchuserdata()..");
-      _fetchuserdata();
+     await Future.delayed(Duration(milliseconds: 50)); // prevent race condition
+     _fetchuserdata();
     }
     else{
       print("Error: User ID or Community ID is null.");
@@ -204,9 +209,9 @@ Future<void> _removeBookFromDB(Map<String, dynamic> book, int index) async {
 
 
 Future<void> deleteImageFromCloudinary(String publicId) async {
-  const cloudName = 'di24ilgw4';
-  const apiKey = '283866122381729';
-  const apiSecret = 'cVnq7zpNpHxV16NYiXAXzoFUSzQ';
+  final cloudName = dotenv.env['CLOUD_NAME'];
+  final apiKey = dotenv.env['API_KEY'];
+  final apiSecret = dotenv.env['API_SECRET'];
 
   final auth = 'Basic ' + base64Encode(utf8.encode('$apiKey:$apiSecret'));
 

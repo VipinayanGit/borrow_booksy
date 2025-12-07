@@ -22,6 +22,8 @@ dependencies:
   http: ^1.4.0
   http_parser: ^4.1.2
   intl: ^0.20.2
+  flutter_dotenv: ^6.0.0
+  rxdart: ^0.28.0
 
 
 dev_dependencies:
@@ -43,6 +45,7 @@ flutter:
   assets:
     - assets/logo.png
     - assets/bookpic.jpg
+    - .env
 
     
     

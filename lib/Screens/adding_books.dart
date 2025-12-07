@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -238,14 +239,14 @@ Future<void> _storebookindb( String bookname, String authorname, String genre,St
 
 Future<String?> uploadImageToCloudinary(
   File imageFile, String bookId, String communityFolderName) async {
-  const cloudName = 'di24ilgw4';
-  const uploadPreset = 'borrowbooksy';
+  final cloudName=dotenv.env['CLOUD_NAME'];
+  final uploadPreset=dotenv.env['UPLOAD_PRESET']; 
 
   try {
     final url = Uri.parse("https://api.cloudinary.com/v1_1/$cloudName/image/upload");
 
     final request = http.MultipartRequest('POST', url)
-      ..fields['upload_preset'] = uploadPreset
+      ..fields['upload_preset'] = uploadPreset??"unknown"
       ..fields['folder'] = 'communities/$communityFolderName'
       ..fields['public_id'] = bookId
       ..files.add(await http.MultipartFile.fromPath(
