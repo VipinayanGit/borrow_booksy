@@ -31,12 +31,15 @@ class _ProfilescreenState extends State<Profilescreen> {
     String response_bkname="";
 final ImagePicker _picker = ImagePicker();
 bool loaded = false;
+bool req_data=false;
 
   @override
   void initState(){
+  
     super.initState();
   
     _loaduserData();
+//R  checkIfRequestExists();
   
   }
   final GlobalKey<ScaffoldState> _ScaffoldKey = GlobalKey<ScaffoldState>();
@@ -242,6 +245,10 @@ Future<void> deleteImageUsingUrl(String imageUrl) async {
   }
 }
 
+
+
+
+
 Stream<List<Map<String, dynamic>>> getBooksStream() {
   return FirebaseFirestore.instance
       .collection("communities")
@@ -265,6 +272,22 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
   }
 
 
+Stream<bool> hasRequestsStream() {
+  return FirebaseFirestore.instance
+      .collection('communities')
+      .doc(Cid)
+      .collection('requests')
+      .where(
+        Filter.or(
+          Filter('requested-To', isEqualTo: CustomUid),
+          Filter('requesterName', isEqualTo: CustomUid),
+        ),
+      )
+      .snapshots()
+      .map((snapshot) => snapshot.docs.isNotEmpty);
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -275,9 +298,31 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
         appBar: AppBar(
           title: Text("profilescreen"),
           actions: [
-            IconButton(
-              onPressed:(){Navigator.push(context,MaterialPageRoute(builder: (context)=>Requestscreen()));},
-              icon:Icon(Icons.menu_book)),
+            StreamBuilder<bool>(
+             stream: hasRequestsStream(),
+             builder: (context, snapshot) {
+               if (!snapshot.hasData) {
+                 return Icon(Icons.notifications_none); // initial state
+               }
+
+               final hasRequest = snapshot.data!;
+           
+               return IconButton(
+                 icon: Icon(
+                   hasRequest
+                       ? Icons.notifications_active
+                       : Icons.notifications_none,
+                   color: hasRequest ? Colors.red : Colors.grey,
+                 ),
+                 onPressed: () {
+                              Navigator.push(
+                     context,
+                     MaterialPageRoute(builder: (_) => Requestscreen()),
+                   );
+                 },
+               );
+  },
+),
             SizedBox(
               width: 10,
             ),
@@ -287,6 +332,10 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
               },
               icon: Icon(Icons.settings),
             ),
+
+            // IconButton(onPressed:()async{
+            // await  checkIfRequestExists();
+            // }, icon: Icon(Icons.refresh))
           ],
         ),
         endDrawer: Drawer(
@@ -654,6 +703,8 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                 onPressed: () async {
                   await deleteImageUsingUrl(imageurl);
                   await _removeBookFromDB(book, index);
+                  print("IMAGE URL  => $imageurl");
+                  print("PUBLIC ID  => ${extractPublicId(imageurl)}"); 
                   Navigator.pop(context);
 
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -680,6 +731,8 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
 );
 
 }
+
+
 Widget _buildDetailRow(String label, String value) {
   return Row(
     children: [

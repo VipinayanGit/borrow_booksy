@@ -355,6 +355,10 @@ for (var doc in snapshot.data!.docs) {
 );
  }
 
+
+
+
+
  Future<void> book_Returned(docId)async{
        DocumentSnapshot<Map<String,dynamic>>lendchecking=await FirebaseFirestore.instance.collection('communities').doc(Cid).collection('loans').doc(docId).get();
        bool isreturned = lendchecking['loan_status']=='returned';

@@ -101,9 +101,9 @@ Future<void> checkLoanTimers() async {
 
   // 🔴 If dialog was shown within the last 24 hours → Do NOT show again
   if (lastShownTime != null) {
-    final minutes = now.difference(lastShownTime).inMinutes;
-    if (minutes < 24) {
-      print("⏳ Dialog was shown $minutes hours ago → Not showing again.");
+    final hourspassed = now.difference(lastShownTime).inMinutes;
+    if (hourspassed < 1) {
+      print("⏳ Dialog was shown $hourspassed hours ago → Not showing again.");
       return;
     }
   }
@@ -156,50 +156,162 @@ Future<void> checkLoanTimers() async {
   }
 }
 
+
+
 Widget requesterDialog(BuildContext context, Map<String, dynamic> data, String docId) {
-  return AlertDialog(
-    title: Text("Return Reminder"),
-    content: Text("You have exceeded the loan period for '${data['bookName']}'."),
-    actions: [
-      TextButton(
-        onPressed: () {
-          Navigator.pop(context);
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => Transactions()),
-          );
-        },
-        child: Text("Go to Transactions"),
+  return Dialog(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    elevation: 10,
+    child: Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 50),
+
+          SizedBox(height: 15),
+
+          Text(
+            "Loan Period Exceeded",
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          SizedBox(height: 10),
+
+          Text(
+            "Your loan period for the book:",
+            style: TextStyle(fontSize: 15, color: Colors.white),
+            textAlign: TextAlign.center,
+          ),
+
+          SizedBox(height: 4),
+
+          Text(
+            "'${data['bookName']}' has expired.",
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            textAlign: TextAlign.center,
+          ),
+
+          SizedBox(height: 20),
+
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blueAccent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => Transactions()),
+              );
+            },
+            child: Text(
+              "View Loan Details",
+              style: TextStyle(fontSize: 16, color: Colors.white),
+            ),
+          ),
+
+          SizedBox(height: 8),
+
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Close", style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
-    ],
+    ),
   );
 }
+
+
+
 
 Widget ownerDialog(BuildContext context, Map<String, dynamic> data, String docId) {
-  return AlertDialog(
-    title: Text("Book Overdue"),
-    content: Text("${data['requester_name']} has not returned '${data['bookName']}' yet."),
-    actions: [
-      TextButton(
-        onPressed: () {
-          FirebaseFirestore.instance
-              .collection('communities')
-              .doc(Cid)
-              .collection('loans')
-              .doc(docId)
-              .update({'loan_status': 'returned'});
+  return Dialog(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    elevation: 10,
+    child: Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.error_outline, color: Colors.redAccent, size: 50),
 
-          Navigator.pop(context);
-        },
-        child: Text("Book Returned"),
+          SizedBox(height: 15),
+
+          Text(
+            "Book Not Returned",
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          SizedBox(height: 10),
+
+          Text(
+            "${data['requester_name']} has not returned your book:",
+            style: TextStyle(fontSize: 15, color: Colors.white),
+            textAlign: TextAlign.center,
+          ),
+
+          SizedBox(height: 4),
+
+          Text(
+            "'${data['bookName']}'",
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+            textAlign: TextAlign.center,
+          ),
+
+          SizedBox(height: 20),
+
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+            ),
+            onPressed: () {
+              FirebaseFirestore.instance
+                  .collection('communities')
+                  .doc(Cid)
+                  .collection('loans')
+                  .doc(docId)
+                  .update({'loan_status': 'returned'});
+              Navigator.pop(context);
+            },
+            child: Text(
+              "Mark as Returned",
+              style: TextStyle(fontSize: 16, color: Colors.white),
+            ),
+          ),
+
+          SizedBox(height: 8),
+
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Close", style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: Text("Close"),
-      ),
-    ],
+    ),
   );
 }
+
+
 
 
 Future<List<Map<String, dynamic>>> fetchBooksFromFirestore() async {
@@ -411,6 +523,9 @@ Future<Map<String, dynamic>?> fetchOwnerDetails(String ownerid) async{
 
 
 }
+
+
+
 void refreshBooks() async {
   setState(() {
     futureBooks = fetchBooksFromFirestore();
@@ -546,6 +661,8 @@ Widget build(BuildContext context) {
     ),
   );
 }
+ 
+ 
  
  
  
@@ -703,6 +820,9 @@ Widget build(BuildContext context) {
 
 
 }
+
+
+
 Widget _buildDetailRow(String label, String value) {
   return Row(
     children: [

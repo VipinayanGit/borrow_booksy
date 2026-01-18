@@ -55,7 +55,6 @@ try{
   await FirebaseFirestore.instance.collection("communities").doc(communityid).collection("users").doc(userid).set({
     "name":name,
     "email":email,
-    "password":password,
     "communityid":communityid,
     "uid":firebaseUid,
     "role":"user",
@@ -107,7 +106,6 @@ try{
     await FirebaseFirestore.instance.collection("communities").doc(communityid).collection("admins").doc(adminid).set({
       "name":name,
       "email":email,
-      "password":password,
       "communityid":communityid,
       "uid":firebaseUid,
       "role":"admin",

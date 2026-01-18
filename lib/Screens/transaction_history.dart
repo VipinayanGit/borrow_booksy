@@ -132,6 +132,8 @@ class _TransactionHistoryState extends State<TransactionHistory> {
       ),
     );
   }
+
+  
   void show_t_Details(Buildcontext,Map<String,dynamic>data){
     if(data.isEmpty){
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Book details not available.")));

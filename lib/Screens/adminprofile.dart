@@ -57,6 +57,7 @@ final ImagePicker _picker = ImagePicker();
   String?UserType;
   String?flat;
   Map<String, dynamic>? userData;
+  bool req_data=false;
 
  Future<void>_loaduserData()async{
     print("Loading user data from SharedPreferences...");
@@ -148,7 +149,7 @@ try{
   await FirebaseFirestore.instance.collection("communities").doc(Cid).collection("users").doc(userid).set({
     "name":name,
     "email":email,
-     "password":password,
+  
     "communityid":communityid,
     "uid":firebaseUid,
     "role":"user",
@@ -287,6 +288,7 @@ Future<void> deleteImageFromCloudinary(String publicId) async {
   }
 }
 
+
 Future<void> deleteImageUsingUrl(String imageUrl) async {
   String publicId = extractPublicId(imageUrl);
   if (publicId.isNotEmpty) {
@@ -320,8 +322,20 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
 
 
 
-
-
+Stream<bool> hasRequestsStream() {
+  return FirebaseFirestore.instance
+      .collection('communities')
+      .doc(Cid)
+      .collection('requests')
+      .where(
+        Filter.or(
+          Filter('requested-To', isEqualTo: CustomUid),
+          Filter('requesterName', isEqualTo: CustomUid),
+        ),
+      )
+      .snapshots()
+      .map((snapshot) => snapshot.docs.isNotEmpty);
+}
 
 
   
@@ -334,9 +348,31 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
         appBar: AppBar(
           title: Text("ADMIN PROFILE"),
           actions: [
-             IconButton(
-              onPressed:(){Navigator.push(context,MaterialPageRoute(builder: (context)=>Requestscreen()));},
-              icon:Icon(Icons.person)),
+            StreamBuilder<bool>(
+             stream: hasRequestsStream(),
+             builder: (context, snapshot) {
+               if (!snapshot.hasData) {
+                 return Icon(Icons.notifications_none); // initial state
+               }
+
+               final hasRequest = snapshot.data!;
+           
+               return IconButton(
+                 icon: Icon(
+                   hasRequest
+                       ? Icons.notifications_active
+                       : Icons.notifications_none,
+                   color: hasRequest ? Colors.red : Colors.grey,
+                 ),
+                 onPressed: () {
+                              Navigator.push(
+                     context,
+                     MaterialPageRoute(builder: (_) => Requestscreen()),
+                   );
+                 },
+               );
+  },
+),
             SizedBox(
               width: 10,
             ),
@@ -825,21 +861,7 @@ Stream<List<Map<String, dynamic>>> getBooksStream() {
                         }
                       },
                     ),
-                    // TextFormField(
-                    //   controller: communityidcontroller,
-                    //   decoration: InputDecoration(labelText: "enter your community id"),
-                    //    validator:(value){
-                    //     if(value.toString().isEmpty){
-                    //       return "type your community id";
-                        
-                    //     }
-                    //     else{
-                    //       return null;
-                    //     }
-                    //   },
-                    // ),
-                   // SizedBox(height: 10),
-                    
+
                   
                     SizedBox(height: 20),
                     ElevatedButton(

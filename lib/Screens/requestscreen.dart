@@ -17,8 +17,8 @@ class _RequestscreenState extends State<Requestscreen> {
      super.initState();
      _loaduserData();
      _refreshFirestore();
-    
   }
+
   String?CustomUid;
   String?Cid;
   String? UserType;
@@ -57,7 +57,8 @@ class _RequestscreenState extends State<Requestscreen> {
     else{
       print("Error: User ID or Community ID is null.");
     }
-  }
+}
+
 
 
 Future<void>create_loan(
@@ -68,22 +69,23 @@ Future<void>create_loan(
             dynamic book_author,
             dynamic book_genre,
             Map<String, dynamic> data,
-            var owner_mobile,
             dynamic owner_flat,
+            owner_mobile,
             duration_value,
             duration_unit,
             r_phno
             )
             async{
+
             String requester_Name=data["requesterName"]??"unknown";
             dynamic requester_flatno=data["requester-flatno"]??"unknown";
             String duration_value=data["duration_value"]??"unknown"; 
             String duration_unit=data["duration_unit"]??"unknown";
             
 
-           final   firestore=FirebaseFirestore.instance;
+         final   firestore=FirebaseFirestore.instance;
          final loanref=firestore.collection("communities").doc(Cid).collection("loans");
-     try{
+         try{
             await loanref.add({
                 "bookName":bookName,
                 "ownerId":ownerId,
@@ -101,6 +103,8 @@ Future<void>create_loan(
                 "loan_status":"not returned"
                 
               }); 
+     print(owner_mobile);
+     print(owner_flat);
               
      print("loan created");
      ScaffoldMessenger.of(context).showSnackBar(
@@ -115,7 +119,9 @@ Future<void>create_loan(
      }   
 }
 
-   Future<DateTime> _bookReceived(duration_value,duration_unit,data) async {
+
+
+  Future<DateTime> _bookReceived(duration_value,duration_unit,data) async {
     
 
     int durationValue = int.tryParse(duration_value) ?? 0;
@@ -133,7 +139,7 @@ Future<void>create_loan(
     if (duration_unit == 'Seconds') {
     endDate = startDate.add(Duration(seconds: durationValue));}
     else if (duration_unit== 'Days') {
-      endDate = startDate.add(Duration(days: durationValue));
+    endDate = startDate.add(Duration(days: durationValue));
     } else if (duration_unit == 'Months') {
       endDate = DateTime(
         startDate.year,
@@ -162,11 +168,13 @@ Future<void>create_loan(
 
 
 
-
-
 Future<void>remove_After_Receiving(String owner_role, String? ownerId, dynamic bookId, dynamic bookName, dynamic book_author, dynamic book_genre,Map<String, dynamic> data,dynamic owner_flat,var owner_mobile,duration_value,duration_unit,r_phno,image)async{
- 
- await create_loan( owner_role, ownerId, bookId, bookName,  book_author, book_genre, data, owner_flat,owner_mobile,duration_value,duration_unit,r_phno);
+ if(image==null){
+   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("no image data"))) ;
+   return;
+ }
+ print(data['image']);
+ await create_loan(owner_role, ownerId, bookId, bookName,  book_author, book_genre, data, owner_flat,owner_mobile,duration_value,duration_unit,r_phno);
 
   await FirebaseFirestore.instance
                   .collection('communities')
@@ -175,16 +183,16 @@ Future<void>remove_After_Receiving(String owner_role, String? ownerId, dynamic b
                   .doc(ownerId)
                   .update({
                   "books": FieldValue.arrayRemove([{
-                  "book-id": bookId,
-                  "name": bookName,
-                  "authorname":book_author,
-                  "genre": book_genre,
-                  "owner-id": ownerId,
-                  "flatno":data['ownerflatno'],
-                  "role":owner_role,
-                  "image_url":image,
-                  "duration_unit":duration_unit,
-                  "duration_value":duration_value,
+                  "book-id": data['bookId'],
+                  "name": data['bookName'],
+                  "authorname":data['book_author'],
+                  "genre": data['book_genre'],
+                  "owner-id": data['requested-To'],
+                  "flatno":data['ownerflatno']  ,
+                  "role":data['owner_role'],
+                  'image_url':data['image'],
+                  "duration_unit":data['duration_unit'],
+                  "duration_value":data['duration_value'],
 
      
                  
@@ -193,12 +201,14 @@ Future<void>remove_After_Receiving(String owner_role, String? ownerId, dynamic b
   });
 
 
-
+    print("book deleted successfully");
    await FirebaseFirestore.instance.collection('communities').doc(Cid).collection(UserType!).doc(CustomUid).update({
    'books_read':FieldValue.increment(1)
    });
 
 }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -262,7 +272,7 @@ for (var doc in snapshot.data!.docs) {
               String status = data['status'] ?? 'pending';
               String requester = data['requesterName']??"unknown";
               String owner = data['requested-To']??"unknown";
-              String r_mobile=data['r_phno']??"unknown";
+              String r_mobile = data['r_phno']??"unknown";
               bool isRequester = requester == CustomUid;
               return ListTile(
                 title: Text("$bookName - $status"),
@@ -283,9 +293,11 @@ for (var doc in snapshot.data!.docs) {
  Widget requesterDialog(BuildContext context, Map<String, dynamic> data, String docId,String Cid) {
   
     String status=data['status'];
+    String image=data['image_url']??"";
+    
 
     return AlertDialog(
-      title: Text("Request Info"),
+      title: Text(data['bookName'],style: TextStyle(fontWeight: FontWeight.bold,fontSize:22),),
       content: status == "accepted"
         ? Column(
             mainAxisSize: MainAxisSize.min,
@@ -300,7 +312,8 @@ for (var doc in snapshot.data!.docs) {
               Text("Mark as received once you collect the book."),
             ],
           )
-        :Text("You requested this book from ${data['ownername']}"),
+        :Text("You requested this book from ${data['ownername']} ($status)"),
+        
       actions: [
        if (status == "accepted") ...[
         Builder(
@@ -308,14 +321,6 @@ for (var doc in snapshot.data!.docs) {
             return TextButton(
               onPressed: () async {
                 try{
-                await FirebaseFirestore.instance
-                    .collection("communities")
-                    .doc(Cid)
-                    .collection("requests")
-                    .doc(docId)
-                    .delete();
-                    
-                 
                String owner_role=data['owner_role']??"unknown";
                String ownerId=data['requested-To']??"unknown";
                dynamic bookId=data['bookId']??"unknown";
@@ -328,7 +333,7 @@ for (var doc in snapshot.data!.docs) {
                String duration_value=data["duration_value"]??"unknown" ;
                String r_phno=data["r_phno"]??"unknown";
 
-            
+
                print(owner_role);
                print(ownerId);
                print(bookId);
@@ -339,9 +344,16 @@ for (var doc in snapshot.data!.docs) {
                print(duration_unit);
                print(r_phno);
                    //await create_loan(owner_role, ownerId, bookId, bookName, book_author, book_genre, data,owner_flat,owner_mobile);
-                   await remove_After_Receiving(owner_role, ownerId, bookId, bookName, book_author, book_genre, data,owner_flat,owner_mobile,duration_value,duration_unit,r_phno,data['image']);
+                   print(image);
+                   await remove_After_Receiving(owner_role, ownerId, bookId, bookName, book_author, book_genre, data,owner_flat,owner_mobile,duration_value,duration_unit,r_phno,image);
                    
-                   print("book deleted successfully");
+                    await FirebaseFirestore.instance
+                    .collection("communities")
+                    .doc(Cid)
+                    .collection("requests")
+                    .doc(docId)
+                    .delete();
+            
                    
               if (Navigator.canPop(context)) {
                 Navigator.pop(context);
@@ -373,39 +385,124 @@ for (var doc in snapshot.data!.docs) {
   }
 
 
+
  
- Widget ownerDialog(BuildContext context, Map<String, dynamic> data, String docId,Cid) {
-    return AlertDialog(
-      title: Text("Request Received"),
-      content: Text("${data['requesterName']} from ${data['requester-flatno']} has requested ${data['bookName']} and his phno is ${data['r_phno']}"),
-      actions: [
-        TextButton(
-          onPressed: () async {
-            await FirebaseFirestore.instance
-                .collection("communities")
-                .doc(Cid)
-                .collection("requests")
-                .doc(docId)
-                .update({"status": "accepted"});
-            Navigator.pop(context);
-          },
-          child: Text("Accept"),
+
+Widget ownerDialog(
+  BuildContext context,
+  Map<String, dynamic> data,
+  String docId,
+  String Cid,
+) {
+  final bool accepted = data['status'] == "accepted";
+
+  return AlertDialog(
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+    ),
+    title: const Text(
+      "Request Received",
+      style: TextStyle(fontWeight: FontWeight.bold),
+    ),
+
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "${data['requesterName']} from ${data['requester-flatno']} has requested",
         ),
-        TextButton(
-          onPressed: () async {
-            await FirebaseFirestore.instance
-                .collection("communities")
-                .doc(Cid)
-                .collection("requests")
-                .doc(docId)
-                .delete();
-            Navigator.pop(context);
-          },
-          child: Text("Decline", style: TextStyle(color: Colors.red)),
+        const SizedBox(height: 6),
+        Text(
+          data['bookName'],
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text("Phone: ${data['r_phno']}"),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: accepted
+                ? Colors.green.shade100
+                : Colors.orange.shade100,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            accepted ? "Accepted" : "Pending",
+            style: TextStyle(
+              color: accepted ? Colors.green : Colors.orange,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ],
-    );
-  }
+    ),
+
+    actions: accepted
+        ? [
+            // ✅ Disabled Accepted Button
+            ElevatedButton(
+              onPressed: null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                disabledBackgroundColor: Colors.green,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text(
+                "Accepted",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ]
+        : [
+            // ✅ Accept Button
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1A73E8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () async {
+                await FirebaseFirestore.instance
+                    .collection("communities")
+                    .doc(Cid)
+                    .collection("requests")
+                    .doc(docId)
+                    .update({"status":"accepted"});
+
+                Navigator.pop(context);
+              },
+              child: const Text("Accept"),
+            ),
+
+            //  Decline Button
+            TextButton(
+              onPressed: () async {
+                
+                await FirebaseFirestore.instance
+                    .collection("communities")
+                    .doc(Cid)
+                    .collection("requests")
+                    .doc(docId)
+                    .delete();
+                 if (!mounted) return;
+                Navigator.pop(context);
+              },
+              child: const Text(
+                "Decline",
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+  );
+}
 
   
 }

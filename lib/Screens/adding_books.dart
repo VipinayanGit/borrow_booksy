@@ -113,7 +113,9 @@ class _AddBooksState extends State<AddBooks> {
   }
   }
    
-   Future<void> pickImage(ImageSource source)async{
+
+
+Future<void> pickImage(ImageSource source)async{
    final PickedFile=await _picker.pickImage(source: source);
    if(PickedFile!=null){
     setState(() {
@@ -196,6 +198,8 @@ class _AddBooksState extends State<AddBooks> {
     }
   }
 
+
+
 Future<void> _storebookindb( String bookname, String authorname, String genre,String final_du, d_value) async {
    
   FirebaseFirestore firestore=FirebaseFirestore.instance;
@@ -236,6 +240,8 @@ Future<void> _storebookindb( String bookname, String authorname, String genre,St
  });
  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("book added successfully")));
 } 
+
+
 
 Future<String?> uploadImageToCloudinary(
   File imageFile, String bookId, String communityFolderName) async {
@@ -315,12 +321,7 @@ Future<String?> uploadImageToCloudinary(
                             
                           ),
                                   
-                        ),
-                      
-                       
-                        
-                      
-                    
+                        ),                    
                     SizedBox(height: 10),
                     TextField(
                       controller: _authornamecontroller,
@@ -393,7 +394,12 @@ Future<String?> uploadImageToCloudinary(
                       SizedBox(height: 20),
                       ElevatedButton(onPressed: ()async{
                        String authorname=_authornamecontroller.text;
-          
+
+                        if(final_du==null){
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please fill duration unit")));
+                             return;
+                        }
+                         
                         if(_imagefile==null){
                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please capture or pick an image")));
                              return;
