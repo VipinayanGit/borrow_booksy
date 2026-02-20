@@ -19,33 +19,56 @@ model=genai.GenerativeModel("gemini-2.5-flash")
 
 app=Flask(__name__)
 
-@app.route("/process_image",methods=['POST'])
+@app.route("/process_image", methods=['POST'])
 def process_image():
-    print("📥 Request received!") 
+    print("📥 Request received!")
     try:
         if 'image' not in request.files:
-            return jsonify({"error" :"no image provided"})
-        
+            return jsonify({"error": "no image provided"})
+
         print("📂 Files received:", request.files)
-        image_file=request.files['image']
-        img=Image.open(io.BytesIO(image_file.read()))
 
-        print("image received from flutter")
-        si="Give me the title  of the book only,if there is no title just return no title,if the image doesn't look like a book front page just return not a book"
+        image_file = request.files['image']
+        img = Image.open(io.BytesIO(image_file.read()))
 
-        response=model.generate_content([si,img])
+        print("📸 Image received from Flutter")
+
+        prompt = """
+        From this book cover image, extract:
+        1. Book title
+        2. Author name
+
+        Return the result strictly in this JSON format:
+
+        {
+          "title": "book title here",
+          "author": "author name here"
+        }
+
+        Rules:
+        - If no title is found return "no title"
+        - If image doesn't look like a book front page return:
+          {
+            "title": "not a book",
+            "author": null
+          }
+        - If no author is found return "no author name"
+        """
+
+        response = model.generate_content([prompt, img])
         print("✅ Gemini processed the image")
-         
-        gemini_text = response.text if hasattr(response, "text") else str(response)
 
+        gemini_text = response.text
+        gemini_text = gemini_text.replace("```json", "").replace("```", "").strip()
 
-
+        parsed = json.loads(gemini_text)
 
         return jsonify({
             "status": "success",
-            "gemini_response":gemini_text
+            "title": parsed.get("title"),
+            "author": parsed.get("author")
         })
-    
+
     except Exception as e:
         print("❌ Error:", str(e))
         return jsonify({"error": str(e)}), 500

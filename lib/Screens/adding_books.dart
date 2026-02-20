@@ -26,8 +26,9 @@ class _AddBooksState extends State<AddBooks> {
   }
    File? _imagefile;
    final ImagePicker _picker=ImagePicker();
-   String BookName="";
-   bool _isLoading=false;
+    String BookName="";
+    String Author_name="";
+    bool _isLoading=false;
    TextEditingController _authornamecontroller=TextEditingController();
     List<String> d_units=["Seconds","Days","Months","Years"];
     String? final_du=null;
@@ -180,8 +181,11 @@ Future<void> pickImage(ImageSource source)async{
           var res = await http.Response.fromStream(response);
            var data = jsonDecode(res.body);
         setState(() {
-            print(data['gemini_response']);    
-            BookName=data['gemini_response'];     
+            print(data['title']);
+            print(data['author']);    
+            BookName=data['title'];
+            Author_name=data['author'];
+                 
             bool restricted_names=invalid_booknames.any((b)=>b.toLowerCase().contains(BookName!.toLowerCase()) )  ;  
             bookname_iseditable=!restricted_names;
         });
@@ -324,7 +328,7 @@ Future<String?> uploadImageToCloudinary(
                         ),                    
                     SizedBox(height: 10),
                     TextField(
-                      controller: _authornamecontroller,
+                      controller: TextEditingController(text: Author_name??""),
                       maxLines: null,
                       decoration: InputDecoration(
                         hintText:"Author name",
