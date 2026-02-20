@@ -188,6 +188,7 @@ Future<void> pickImage(ImageSource source)async{
                  
             bool restricted_names=invalid_booknames.any((b)=>b.toLowerCase().contains(BookName!.toLowerCase()) )  ;  
             bookname_iseditable=!restricted_names;
+            
         });
       } else {
         print("❌ Upload failed: ${response.statusCode}");
@@ -328,8 +329,9 @@ Future<String?> uploadImageToCloudinary(
                         ),                    
                     SizedBox(height: 10),
                     TextField(
-                      controller: TextEditingController(text: Author_name??""),
+                      controller: TextEditingController(text: Author_name??"no author"),
                       maxLines: null,
+                      readOnly: !bookname_iseditable,
                       decoration: InputDecoration(
                         hintText:"Author name",
                         border: OutlineInputBorder()
@@ -448,6 +450,7 @@ Future<String?> uploadImageToCloudinary(
                           final_du=null;
                           _dvController.clear();
                           _authornamecontroller.clear();
+                          Author_name="";
                           });
                       },
                       child:Text("upload book")),
