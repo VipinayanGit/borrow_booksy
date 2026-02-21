@@ -29,7 +29,7 @@ class _AddBooksState extends State<AddBooks> {
     String BookName="";
     String Author_name="";
     bool _isLoading=false;
-   TextEditingController _authornamecontroller=TextEditingController();
+
     List<String> d_units=["Seconds","Days","Months","Years"];
     String? final_du=null;
     List<String> genres = ["Fiction", "Non-Fiction", "Mystery", "Fantasy", "Science Fiction", "Biography", "History", "Poetry"];
@@ -333,7 +333,7 @@ Future<String?> uploadImageToCloudinary(
                       maxLines: null,
                       readOnly: !bookname_iseditable,
                       decoration: InputDecoration(
-                        hintText:"Author name",
+                        hintText:"Auto fetching Author name",
                         border: OutlineInputBorder()
                       ),
           
@@ -399,8 +399,7 @@ Future<String?> uploadImageToCloudinary(
                      
                       SizedBox(height: 20),
                       ElevatedButton(onPressed: ()async{
-                       String authorname=_authornamecontroller.text;
-
+                      
                         if(final_du==null){
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please fill duration unit")));
                              return;
@@ -420,7 +419,7 @@ Future<String?> uploadImageToCloudinary(
                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("It is not a book")));
                             return ;
                         }
-                        if(authorname.isEmpty&&selectedGenre==null && BookName.isEmpty){
+                        if(Author_name.isEmpty&&selectedGenre==null && BookName.isEmpty){
                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please Fill the columns")));
                               return;
                         }
@@ -438,18 +437,18 @@ Future<String?> uploadImageToCloudinary(
                             }
                           }
                     //    d_value=_dvController.text;
-                        if(BookName.isNotEmpty && authorname.isNotEmpty){
-                           await _storebookindb(BookName,authorname,selectedGenre!,final_du!,d_value);
+                        if(BookName.isNotEmpty && Author_name.isNotEmpty){
+                           await _storebookindb(BookName,Author_name,selectedGenre!,final_du!,d_value);
                           }
                         setState(() {
                           _imagefile=null;
                           selectedGenre=null;
                           BookName="";
-                          authorname="";
+                      
                           d_value="";
                           final_du=null;
                           _dvController.clear();
-                          _authornamecontroller.clear();
+                          
                           Author_name="";
                           });
                       },

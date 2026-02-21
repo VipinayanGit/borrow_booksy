@@ -55,6 +55,7 @@ bool req_data=false;
   String?phno;
   String?flat;
   Map<String, dynamic>? userData;
+  String CommunityName="";
  
  
   
@@ -81,6 +82,17 @@ bool req_data=false;
         phno=mobile;
 
       });
+              FirebaseFirestore.instance
+    .collection('communities')
+    .doc(Cid)
+    .get()
+    .then((DocumentSnapshot doc) {
+      
+      if (doc.exists) {
+         CommunityName=doc['name'];
+      }
+    });
+
 
       print("calling _fetchuserdata()..");
      await Future.delayed(Duration(milliseconds: 50)); // prevent race condition
@@ -422,7 +434,7 @@ Stream<bool> hasRequestsStream() {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          "Community: $Cid",
+                          "Community: $CommunityName",
                           style: TextStyle(
                             fontSize: 15,
                             color: Colors.grey[300],
@@ -518,8 +530,7 @@ Stream<bool> hasRequestsStream() {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: Colors.white12),
                   ),
-                  child: Center(
-                    child: Column(
+                  child:Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -548,7 +559,7 @@ Stream<bool> hasRequestsStream() {
                             fontSize: 16,
                             fontWeight: FontWeight.w500),
                         ),
-                        Text(authorName),
+                       Text(authorName,textAlign:TextAlign.center),
                         Text(
                           genre,
                           style: TextStyle( color: Colors.purple[200],
@@ -556,7 +567,7 @@ Stream<bool> hasRequestsStream() {
                         ),
                       ],
                     ),
-                  ),
+                  
                 ),
                 ),
               );

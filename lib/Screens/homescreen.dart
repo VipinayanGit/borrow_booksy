@@ -640,6 +640,7 @@ Widget build(BuildContext context) {
                         Text(
                         book["authorname"] ?? "Unknown Author",
                         style:  TextStyle(color: Colors.grey[400], fontSize: 14),
+                        textAlign: TextAlign.center,
                         ),
                         Text(
                            book["genre"] ?? "No Genre",

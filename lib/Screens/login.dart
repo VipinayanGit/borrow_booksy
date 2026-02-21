@@ -65,26 +65,7 @@ class _loginState extends State<login> {
       else{
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("User not found")));
       }
-      //  if(adminclick){
-      //   DocumentSnapshot admindoc=await FirebaseFirestore.instance.collection("communities").doc(Cid).collection("admins").doc(id).get();
-      //   if(!admindoc.exists){
-      //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text("no admin id found")));
-      //     return;
-      //   }
-      //   await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: password);
-      //    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text("welcome ${admindoc['name']}")));
-      //    Navigator.pushReplacement(context,MaterialPageRoute(builder: (context)=>Navscreen(role: "admin")));//driveService: widget.driveService,
-      // }else{
-      //   DocumentSnapshot userdoc=await FirebaseFirestore.instance.collection("communities").doc(Cid).collection("users").doc(id).get();
-      //   if(!userdoc.exists){
-      //       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text("no user id found")));
-      //       return;
-      //        }
-      //   await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: password);
-      //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text("welcome ${userdoc['name']}")));
-      //     Navigator.pushReplacement(context,MaterialPageRoute(builder: (context)=>Navscreen(role: "user")));//driveService:widget.driveService
-         
-      // }     
+   
        }catch(e){
          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: ${e.toString()}")));
        }

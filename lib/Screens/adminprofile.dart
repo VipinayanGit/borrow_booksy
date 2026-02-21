@@ -57,6 +57,7 @@ final ImagePicker _picker = ImagePicker();
   String?UserType;
   String?flat;
   Map<String, dynamic>? userData;
+  String CommunityName="";
   bool req_data=false;
 
  Future<void>_loaduserData()async{
@@ -66,7 +67,7 @@ final ImagePicker _picker = ImagePicker();
     String? storedcommunityid=prefs.getString('communityId');
     String? storedflatno=prefs.getString('flat');
     bool isAdmin=prefs.getBool('isadmin')??false;
-
+  
     print("Stored User ID: $storeduserid");
     print("Stored Community ID: $storedcommunityid");
     print("Is Admin: $isAdmin");
@@ -81,6 +82,17 @@ final ImagePicker _picker = ImagePicker();
         UserType=isAdmin?'admins':'users';
 
       });
+        FirebaseFirestore.instance
+    .collection('communities')
+    .doc(Cid)
+    .get()
+    .then((DocumentSnapshot doc) {
+      
+      if (doc.exists) {
+         CommunityName=doc['name'];
+      }
+    });
+
 
       print("calling _fetchuserdata()..");
       _fetchuserdata();
@@ -472,7 +484,7 @@ Stream<bool> hasRequestsStream() {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          "Community: $Cid",
+                          "Community: $CommunityName",
                           style: TextStyle(
                             fontSize: 15,
                             color: Colors.grey[300],
@@ -540,76 +552,14 @@ Stream<bool> hasRequestsStream() {
 
 
 
-                // Container(
-                //   width: double.infinity,
-                //   child: Row(
-                //     mainAxisAlignment: MainAxisAlignment.spaceAround,
-                //     children: [
-                      
-                //      // CircleAvatar(radius: 50),
-                //       Container(
-                //         child: Column(
-                //           crossAxisAlignment: CrossAxisAlignment.start,
-                //           children: [
-                //             Text(
-                //                userData != null ? userData!['communityid'] ?? 'N/A' : 'Loading...',
-                //               style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-                //             ),
-                //             Text(userData != null ? userData!['name'] ?? 'N/A' : 'Loading...'),
-                //             Text(userData != null ? userData!['flatno'] ?? 'N/A' : 'Loading...'),
-                //             SizedBox(height: 10),
-                            
-                //           ],
-                //         ),
-                //       ),
-                //       Column(
-                             
-                //               children: [
-                //                 Padding(padding: EdgeInsets.only(bottom:20)),
-                //                 SizedBox(width: 5),
-                //                 Container(
-                //                   padding: EdgeInsets.all(10),
-                //                   height: 40,
-                //                   width: 120,
-                //                   child: ElevatedButton(
-                //                     onPressed:(){ Navigator.push(context,MaterialPageRoute(builder: (context)=>AddBooks()));},
-                //                     child: Text(
-                //                       textAlign: TextAlign.center,
-                //                       "Add Books",
-                //                       style: TextStyle(fontSize: 10),
-                //                     ),
-                //                   ),
-                //                 ),
-                //                 SizedBox(width: 5),
-                //                 Container(
-                //                   height: 40,
-                //                   width: 120,
-                //                   child: ElevatedButton(
-                //                     onPressed: () {
-                //                       _manageusers(context);
-                //                     },
-                //                     child: Text(
-                //                       textAlign: TextAlign.center,
-                //                       "Manage users",
-                //                       style: TextStyle(fontSize: 10),
-                //                     ),
-                //                   ),
-                //                 ),
-                //               ],
-                //             )
-                //     ],
-                //   ),
-                // ),
+           
                 SizedBox(height: 10),
                 TabBar(tabs: [
                   Tab(
                     icon: Icon(Icons.book),
                     text: "your Rack",
                   ),
-                  // Tab(
-                  //   icon: Icon(Icons.book),
-                  //   text: "History",
-                  // ),
+
                 ]),
                 Expanded(
                   child: TabBarView(
@@ -664,8 +614,7 @@ Stream<bool> hasRequestsStream() {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: Colors.white12),
                   ),
-                  child: Center(
-                    child: Column(
+                  child:Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -694,7 +643,7 @@ Stream<bool> hasRequestsStream() {
                             fontSize: 16,
                             fontWeight: FontWeight.w500),
                         ),
-                        Text(authorName),
+                        Text(authorName,textAlign: TextAlign.center,),
                         Text(
                           genre,
                           style: TextStyle( color: Colors.purple[200],
@@ -702,7 +651,7 @@ Stream<bool> hasRequestsStream() {
                         ),
                       ],
                     ),
-                  ),
+                  
                 ),
               );
             },

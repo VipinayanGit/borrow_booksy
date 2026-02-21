@@ -394,7 +394,9 @@ Future<void> deleteImageFromCloudinary(String publicId) async {
     }
   }
 
-
+void refreshReaders()async{
+  await fetchTopReaders();
+}
 
 
 
@@ -404,7 +406,9 @@ Future<void> deleteImageFromCloudinary(String publicId) async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Events")),
+      appBar: AppBar(title: Text("Events"),actions: [
+        IconButton(onPressed: (){refreshReaders();}, icon: Icon(Icons.refresh))
+      ],),
       body: Cid == null
           ? Center(child: CircularProgressIndicator())
           :Column(
